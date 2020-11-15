@@ -22,13 +22,9 @@
     <select />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="d9ee1e79-dda4-44f7-9bd3-61ba8d8e2e0f" name="Default Changelist" comment="pretty envs">
-      <change afterPath="$PROJECT_DIR$/.github/workflows/golangci-lint.yml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/pkg/app/app.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.github/workflows/go.yml" beforeDir="false" />
+    <list default="true" id="d9ee1e79-dda4-44f7-9bd3-61ba8d8e2e0f" name="Default Changelist" comment="golang lint and fiber start">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/cmd/mycareer/main.go" beforeDir="false" afterPath="$PROJECT_DIR$/cmd/mycareer/main.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pkg/env/env.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/env/env.go" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -173,7 +169,8 @@
     <MESSAGE value="project structure refactored" />
     <MESSAGE value="Server config port added" />
     <MESSAGE value="pretty envs" />
-    <option name="LAST_COMMIT_MESSAGE" value="pretty envs" />
+    <MESSAGE value="golang lint and fiber start" />
+    <option name="LAST_COMMIT_MESSAGE" value="golang lint and fiber start" />
   </component>
   <component name="VgoProject">
     <integration-enabled>true</integration-enabled>
@@ -255,10 +252,10 @@
       <screen x="0" y="34" width="1920" height="1046" />
     </state>
     <state x="449" y="192" key="SettingsEditor/0.34.1920.1046/1920.312.1366.768@0.34.1920.1046" timestamp="1605406711256" />
-    <state x="555" y="279" width="800" height="552" key="Vcs.Push.Dialog.v2" timestamp="1605452282950">
+    <state x="555" y="279" width="800" height="552" key="Vcs.Push.Dialog.v2" timestamp="1605464522116">
       <screen x="0" y="34" width="1920" height="1046" />
     </state>
-    <state x="555" y="279" width="800" height="552" key="Vcs.Push.Dialog.v2/0.34.1920.1046/1920.312.1366.768@0.34.1920.1046" timestamp="1605452282950" />
+    <state x="555" y="279" width="800" height="552" key="Vcs.Push.Dialog.v2/0.34.1920.1046/1920.312.1366.768@0.34.1920.1046" timestamp="1605464522116" />
     <state x="764" y="469" width="506" height="172" key="git4idea.remote.GitConfigureRemotesDialog" timestamp="1605422672324">
       <screen x="0" y="34" width="1920" height="1046" />
     </state>

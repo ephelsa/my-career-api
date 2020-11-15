@@ -1,4 +1,4 @@
-package config
+package env
 
 import (
 	"encoding/json"
@@ -20,12 +20,35 @@ type Server struct {
 	Port string `json:"port"`
 }
 
-type Configuration struct {
+type Config struct {
 	Database Database `json:"database"`
 	Server   Server   `json:"server"`
 }
 
-func SetupEnvironment() *Configuration {
+func Envs() Environments {
+	return Environments{
+		Production: EnvironmentFile{
+			Name:      "config.prod",
+			Extension: "json",
+		},
+		Development: EnvironmentFile{
+			Name:      "config.dev",
+			Extension: "json",
+		},
+	}
+}
+
+type EnvironmentFile struct {
+	Name      string
+	Extension string
+}
+
+type Environments struct {
+	Production  EnvironmentFile
+	Development EnvironmentFile
+}
+
+func Setup() *Config {
 	var db = map[string]interface{}{}
 	var server = map[string]interface{}{}
 
@@ -38,13 +61,14 @@ func SetupEnvironment() *Configuration {
 			"host": viper.Get("DB_HOST"),
 			"port": viper.Get("DB_PORT"),
 		}
-		err := viperReadConfigFile("config.prod", "json")
+		err := viperReadConfigFile(Envs().Production)
 		if err != nil {
 			panic(err)
 		}
+
 		server = viper.GetStringMap("server")
 	} else {
-		err := viperReadConfigFile("config.dev", "json")
+		err := viperReadConfigFile(Envs().Development)
 		if err != nil {
 			panic(err)
 		}
@@ -53,34 +77,34 @@ func SetupEnvironment() *Configuration {
 		server = viper.GetStringMap("server")
 	}
 
-	conf, err := newConfiguration(db, server)
+	conf, err := newConfig(db, server)
 	if err != nil {
-		panic(fmt.Errorf("Error retrieving Configuration: %s \n", err))
+		panic(fmt.Errorf("Error retrieving Config: %s \n", err))
 	}
 
 	return conf
 }
 
-func viperReadConfigFile(name string, extension string) error {
-	viper.SetConfigName(name)
-	viper.SetConfigType(extension)
-	viper.AddConfigPath("./pkg/config") // for build
-	viper.AddConfigPath(".")            // for test
+func viperReadConfigFile(file EnvironmentFile) error {
+	viper.SetConfigName(file.Name)
+	viper.SetConfigType(file.Extension)
+	viper.AddConfigPath("./pkg/env") // for build
+	viper.AddConfigPath(".")         // for test
 
 	err := viper.ReadInConfig()
 	if err != nil {
-		return fmt.Errorf("Fatal error config file: %s \n", err)
+		return fmt.Errorf("Fatal error env file: %s \n", err)
 	} else {
 		return nil
 	}
 }
 
-func newConfiguration(database map[string]interface{}, server map[string]interface{}) (*Configuration, error) {
+func newConfig(database map[string]interface{}, server map[string]interface{}) (*Config, error) {
 	unparsed := map[string]interface{}{
 		"database": database,
 		"server":   server,
 	}
-	config := Configuration{}
+	config := Config{}
 	bytes, err := json.Marshal(unparsed)
 	if err != nil {
 		return nil, err

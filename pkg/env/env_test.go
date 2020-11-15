@@ -1,4 +1,4 @@
-package config
+package env
 
 import (
 	"encoding/json"
@@ -10,7 +10,7 @@ import (
 	"github.com/magiconair/properties/assert"
 )
 
-func (conf Configuration) helperAssertConfig(t *testing.T, database map[string]interface{}, server map[string]interface{}) {
+func (conf Config) helperAssertConfig(t *testing.T, database map[string]interface{}, server map[string]interface{}) {
 	assert.Equal(t, conf.Database.Username, database["user"])
 	assert.Equal(t, conf.Database.Password, database["pass"])
 	assert.Equal(t, conf.Database.Name, database["name"])
@@ -19,7 +19,7 @@ func (conf Configuration) helperAssertConfig(t *testing.T, database map[string]i
 	assert.Equal(t, conf.Server.Port, server["port"])
 }
 
-func Test_newConfiguration(t *testing.T) {
+func Test_newConfig(t *testing.T) {
 	db := map[string]interface{}{
 		"user": "USER",
 		"pass": "TOP-SECRET-PASSWORD",
@@ -30,7 +30,7 @@ func Test_newConfiguration(t *testing.T) {
 	server := map[string]interface{}{
 		"port": "6969",
 	}
-	conf, err := newConfiguration(db, server)
+	conf, err := newConfig(db, server)
 	if err != nil {
 		t.Errorf("An error has been occur %s", err)
 	}
@@ -38,13 +38,13 @@ func Test_newConfiguration(t *testing.T) {
 	conf.helperAssertConfig(t, db, server)
 }
 
-func openConfigFile(fileName string) (*Configuration, error) {
+func openConfigFile(fileName string) (*Config, error) {
 	file, err := ioutil.ReadFile(fileName)
 	if err != nil {
 		return nil, fmt.Errorf("Can't open file: %s \n", err)
 	}
 
-	config := Configuration{}
+	config := Config{}
 	err = json.Unmarshal(file, &config)
 	if err != nil {
 		return nil, fmt.Errorf("Parse json error: %s \n", err)
@@ -53,8 +53,8 @@ func openConfigFile(fileName string) (*Configuration, error) {
 	return &config, nil
 }
 
-func Test_SetupEnvironment_Dev(t *testing.T) {
-	configuration, err := openConfigFile("config.dev.json")
+func Test_Setup_Development(t *testing.T) {
+	configuration, err := openConfigFile(fmt.Sprintf("%s.%s", Envs().Development.Name, Envs().Development.Extension))
 	if err != nil {
 		t.Error(err)
 	}
@@ -69,14 +69,14 @@ func Test_SetupEnvironment_Dev(t *testing.T) {
 	server := map[string]interface{}{
 		"port": configuration.Server.Port,
 	}
-	SetupEnvironment().helperAssertConfig(t, db, server)
+	Setup().helperAssertConfig(t, db, server)
 }
 
-func Test_SetupEnvironment_Prod(t *testing.T) {
+func Test_Setup_Production(t *testing.T) {
 	// Prod
 	_ = os.Setenv("ENV", "prod")
 
-	configuration, err := openConfigFile("config.prod.json")
+	configuration, err := openConfigFile(fmt.Sprintf("%s.%s", Envs().Production.Name, Envs().Production.Extension))
 	if err != nil {
 		t.Error(err)
 	}
@@ -99,5 +99,5 @@ func Test_SetupEnvironment_Prod(t *testing.T) {
 		"port": configuration.Server.Port,
 	}
 
-	SetupEnvironment().helperAssertConfig(t, db, server)
+	Setup().helperAssertConfig(t, db, server)
 }

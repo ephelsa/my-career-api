@@ -1,0 +1,6 @@
+/bin
+*.iml
+/.idea/caches
+/.idea/modules.xml
+/.idea/workspace.xml
+

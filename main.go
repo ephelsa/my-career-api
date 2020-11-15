@@ -6,7 +6,7 @@ import (
 )
 
 func main() {
-	conf := config.EnvironmentConfig()
+	conf := config.SetupEnvironment()
 
 	fmt.Println("Configuration")
 	fmt.Println(conf)

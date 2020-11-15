@@ -5,7 +5,14 @@ lint-prepare:
 lint:
 	./bin/golangci-lint run ./...
 
+.PHONY: lint-prepare lint
+
 test:
 	go test -v -cover -covermode=atomic ./...
 
-.PHONY: lint-prepare lint
+.PHONY: test
+
+database-run:
+	docker-compose --env-file ./internal/env/dev.env up
+
+.PHONY: database-run

@@ -3,12 +3,12 @@ version: "3.8"
 services:
   database:
     image: postgres
-    container_name: "my-career-database"
+    container_name: "my-career-dev_database"
     volumes:
       - ./data:/var/lib/postgresql/data
     environment:
       - POSTGRES_DB=${DB_NAME}
-      - POSTGRES_USER=${DB_USERNAME}
+      - POSTGRES_USER=${DB_USER}
       - POSTGRES_PASSWORD=${DB_PASSWORD}
     ports:
       - "5432:5432"

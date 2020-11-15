@@ -16,16 +16,21 @@ type Database struct {
 	Port     string `json:"port"`
 }
 
+type Server struct {
+	Port string `json:"port"`
+}
+
 type Configuration struct {
 	Database Database `json:"database"`
+	Server   Server   `json:"server"`
 }
 
 func SetupEnvironment() *Configuration {
 	var db = map[string]interface{}{}
+	var server = map[string]interface{}{}
 
 	if os.Getenv("ENV") == "prod" {
 		viper.AutomaticEnv()
-
 		db = map[string]interface{}{
 			"user": viper.Get("DB_USER"),
 			"pass": viper.Get("DB_PASS"),
@@ -33,21 +38,22 @@ func SetupEnvironment() *Configuration {
 			"host": viper.Get("DB_HOST"),
 			"port": viper.Get("DB_PORT"),
 		}
-	} else {
-		viper.SetConfigName("config.dev")
-		viper.SetConfigType("json")
-		viper.AddConfigPath("./pkg/config") // for build
-		viper.AddConfigPath(".")            // for test
-		err := viper.ReadInConfig()
+		err := viperReadConfigFile("config.prod", "json")
 		if err != nil {
-			panic(fmt.Errorf("Fatal error config file: %s \n", err))
-			return nil
+			panic(err)
+		}
+		server = viper.GetStringMap("server")
+	} else {
+		err := viperReadConfigFile("config.dev", "json")
+		if err != nil {
+			panic(err)
 		}
 
 		db = viper.GetStringMap("database")
+		server = viper.GetStringMap("server")
 	}
 
-	conf, err := newConfiguration(db)
+	conf, err := newConfiguration(db, server)
 	if err != nil {
 		panic(fmt.Errorf("Error retrieving Configuration: %s \n", err))
 	}
@@ -55,9 +61,24 @@ func SetupEnvironment() *Configuration {
 	return conf
 }
 
-func newConfiguration(database map[string]interface{}) (*Configuration, error) {
+func viperReadConfigFile(name string, extension string) error {
+	viper.SetConfigName(name)
+	viper.SetConfigType(extension)
+	viper.AddConfigPath("./pkg/config") // for build
+	viper.AddConfigPath(".")            // for test
+
+	err := viper.ReadInConfig()
+	if err != nil {
+		return fmt.Errorf("Fatal error config file: %s \n", err)
+	} else {
+		return nil
+	}
+}
+
+func newConfiguration(database map[string]interface{}, server map[string]interface{}) (*Configuration, error) {
 	unparsed := map[string]interface{}{
 		"database": database,
+		"server":   server,
 	}
 	config := Configuration{}
 	bytes, err := json.Marshal(unparsed)

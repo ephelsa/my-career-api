@@ -22,12 +22,12 @@
     <select />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="d9ee1e79-dda4-44f7-9bd3-61ba8d8e2e0f" name="Default Changelist" comment="Fixed config">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/config/config.dev.json" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/config/config.dev.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/config/config.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/config/config.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/config/config_test.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/config/config_test.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/main.go" beforeDir="false" afterPath="$PROJECT_DIR$/cmd/mycareer/main.go" afterDir="false" />
+    <list default="true" id="d9ee1e79-dda4-44f7-9bd3-61ba8d8e2e0f" name="Default Changelist" comment="project structure refactored">
+      <change afterPath="$PROJECT_DIR$/pkg/config/config.prod.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/go.mod" beforeDir="false" afterPath="$PROJECT_DIR$/go.mod" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/config/config.dev.json" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/config/config.dev.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/config/config.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/config/config.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/config/config_test.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/config/config_test.go" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -79,7 +79,7 @@
       <recent name="$PROJECT_DIR$/cmd/mycareer" />
     </key>
   </component>
-  <component name="RunManager" selected="Go Build.go build ephelsa/my-career/cmd/mycareer">
+  <component name="RunManager" selected="Go Test.Test_SetupEnvironment_Prod in ephelsa/my-career/pkg/config">
     <configuration name="go build ephelsa/my-career/cmd/mycareer" type="GoApplicationRunConfiguration" factoryName="Go Application" temporary="true" nameIsGenerated="true">
       <module name="mycareerapi" />
       <working_directory value="$PROJECT_DIR$" />
@@ -89,34 +89,37 @@
       <directory value="$PROJECT_DIR$" />
       <method v="2" />
     </configuration>
-    <configuration name="go build main.go dev" type="GoApplicationRunConfiguration" factoryName="Go Application" temporary="true">
+    <configuration name="Test_SetupEnvironment_Dev in ephelsa/my-career/pkg/config" type="GoTestRunConfiguration" factoryName="Go Test" temporary="true" nameIsGenerated="true">
       <module name="mycareerapi" />
-      <working_directory value="$PROJECT_DIR$" />
-      <parameters value="ENV=&quot;dev&quot;" />
-      <kind value="FILE" />
-      <filePath value="$PROJECT_DIR$/main.go" />
-      <directory value="$PROJECT_DIR$" />
-      <method v="2" />
-    </configuration>
-    <configuration name="Test_SetupEnvironment_Dev in ephelsa/my-career/config" type="GoTestRunConfiguration" factoryName="Go Test" temporary="true" nameIsGenerated="true">
-      <module name="mycareerapi" />
-      <working_directory value="$PROJECT_DIR$/config" />
+      <working_directory value="$PROJECT_DIR$/pkg/config" />
       <framework value="gotest" />
       <kind value="PACKAGE" />
-      <package value="ephelsa/my-career/config" />
+      <package value="ephelsa/my-career/pkg/config" />
       <directory value="$PROJECT_DIR$" />
       <filePath value="$PROJECT_DIR$" />
       <pattern value="^\QTest_SetupEnvironment_Dev\E$" />
       <method v="2" />
     </configuration>
-    <configuration name="go test ephelsa/my-career/config" type="GoTestRunConfiguration" factoryName="Go Test" temporary="true" nameIsGenerated="true">
+    <configuration name="Test_SetupEnvironment_Prod in ephelsa/my-career/pkg/config" type="GoTestRunConfiguration" factoryName="Go Test" temporary="true" nameIsGenerated="true">
       <module name="mycareerapi" />
-      <working_directory value="$PROJECT_DIR$/config" />
+      <working_directory value="$PROJECT_DIR$/pkg/config" />
       <framework value="gotest" />
       <kind value="PACKAGE" />
-      <package value="ephelsa/my-career/config" />
+      <package value="ephelsa/my-career/pkg/config" />
       <directory value="$PROJECT_DIR$" />
       <filePath value="$PROJECT_DIR$" />
+      <pattern value="^\QTest_SetupEnvironment_Prod\E$" />
+      <method v="2" />
+    </configuration>
+    <configuration name="Test_newConfiguration in ephelsa/my-career/pkg/config" type="GoTestRunConfiguration" factoryName="Go Test" temporary="true" nameIsGenerated="true">
+      <module name="mycareerapi" />
+      <working_directory value="$PROJECT_DIR$/pkg/config" />
+      <framework value="gotest" />
+      <kind value="PACKAGE" />
+      <package value="ephelsa/my-career/pkg/config" />
+      <directory value="$PROJECT_DIR$" />
+      <filePath value="$PROJECT_DIR$" />
+      <pattern value="^\QTest_newConfiguration\E$" />
       <method v="2" />
     </configuration>
     <configuration name="go test ephelsa/my-career/pkg/config" type="GoTestRunConfiguration" factoryName="Go Test" temporary="true" nameIsGenerated="true">
@@ -130,19 +133,19 @@
       <method v="2" />
     </configuration>
     <list>
-      <item itemvalue="Go Build.go build main.go dev" />
       <item itemvalue="Go Build.go build ephelsa/my-career/cmd/mycareer" />
-      <item itemvalue="Go Test.Test_SetupEnvironment_Dev in ephelsa/my-career/config" />
-      <item itemvalue="Go Test.go test ephelsa/my-career/config" />
       <item itemvalue="Go Test.go test ephelsa/my-career/pkg/config" />
+      <item itemvalue="Go Test.Test_SetupEnvironment_Dev in ephelsa/my-career/pkg/config" />
+      <item itemvalue="Go Test.Test_SetupEnvironment_Prod in ephelsa/my-career/pkg/config" />
+      <item itemvalue="Go Test.Test_newConfiguration in ephelsa/my-career/pkg/config" />
     </list>
     <recent_temporary>
       <list>
+        <item itemvalue="Go Test.Test_SetupEnvironment_Prod in ephelsa/my-career/pkg/config" />
+        <item itemvalue="Go Test.Test_SetupEnvironment_Dev in ephelsa/my-career/pkg/config" />
+        <item itemvalue="Go Test.Test_newConfiguration in ephelsa/my-career/pkg/config" />
         <item itemvalue="Go Build.go build ephelsa/my-career/cmd/mycareer" />
         <item itemvalue="Go Test.go test ephelsa/my-career/pkg/config" />
-        <item itemvalue="Go Build.go build main.go dev" />
-        <item itemvalue="Go Test.go test ephelsa/my-career/config" />
-        <item itemvalue="Go Test.Test_SetupEnvironment_Dev in ephelsa/my-career/config" />
       </list>
     </recent_temporary>
   </component>
@@ -164,7 +167,8 @@
   <component name="VcsManagerConfiguration">
     <MESSAGE value="docker-compose.yaml for mongodb locally&#10;configuring envs" />
     <MESSAGE value="Fixed config" />
-    <option name="LAST_COMMIT_MESSAGE" value="Fixed config" />
+    <MESSAGE value="project structure refactored" />
+    <option name="LAST_COMMIT_MESSAGE" value="project structure refactored" />
   </component>
   <component name="VgoProject">
     <integration-enabled>true</integration-enabled>
@@ -210,38 +214,38 @@
       <screen x="0" y="34" width="1920" height="1046" />
     </state>
     <state x="738" y="312" width="424" height="480" key="FileChooserDialogImpl/0.34.1920.1046/1920.312.1366.768@0.34.1920.1046" timestamp="1605406708791" />
-    <state width="1874" height="277" key="GridCell.Tab.0.bottom" timestamp="1605452806873">
+    <state width="1874" height="277" key="GridCell.Tab.0.bottom" timestamp="1605454878024">
       <screen x="0" y="34" width="1920" height="1046" />
     </state>
-    <state width="1874" height="277" key="GridCell.Tab.0.bottom/0.34.1920.1046/1920.312.1366.768@0.34.1920.1046" timestamp="1605452806873" />
-    <state width="1874" height="277" key="GridCell.Tab.0.center" timestamp="1605452806873">
+    <state width="1874" height="277" key="GridCell.Tab.0.bottom/0.34.1920.1046/1920.312.1366.768@0.34.1920.1046" timestamp="1605454878024" />
+    <state width="1874" height="277" key="GridCell.Tab.0.center" timestamp="1605454878024">
       <screen x="0" y="34" width="1920" height="1046" />
     </state>
-    <state width="1874" height="277" key="GridCell.Tab.0.center/0.34.1920.1046/1920.312.1366.768@0.34.1920.1046" timestamp="1605452806873" />
-    <state width="1874" height="277" key="GridCell.Tab.0.left" timestamp="1605452806873">
+    <state width="1874" height="277" key="GridCell.Tab.0.center/0.34.1920.1046/1920.312.1366.768@0.34.1920.1046" timestamp="1605454878024" />
+    <state width="1874" height="277" key="GridCell.Tab.0.left" timestamp="1605454878024">
       <screen x="0" y="34" width="1920" height="1046" />
     </state>
-    <state width="1874" height="277" key="GridCell.Tab.0.left/0.34.1920.1046/1920.312.1366.768@0.34.1920.1046" timestamp="1605452806873" />
-    <state width="1874" height="277" key="GridCell.Tab.0.right" timestamp="1605452806873">
+    <state width="1874" height="277" key="GridCell.Tab.0.left/0.34.1920.1046/1920.312.1366.768@0.34.1920.1046" timestamp="1605454878024" />
+    <state width="1874" height="277" key="GridCell.Tab.0.right" timestamp="1605454878024">
       <screen x="0" y="34" width="1920" height="1046" />
     </state>
-    <state width="1874" height="277" key="GridCell.Tab.0.right/0.34.1920.1046/1920.312.1366.768@0.34.1920.1046" timestamp="1605452806873" />
-    <state width="1874" height="342" key="GridCell.Tab.1.bottom" timestamp="1605451912954">
+    <state width="1874" height="277" key="GridCell.Tab.0.right/0.34.1920.1046/1920.312.1366.768@0.34.1920.1046" timestamp="1605454878024" />
+    <state width="1874" height="342" key="GridCell.Tab.1.bottom" timestamp="1605454183573">
       <screen x="0" y="34" width="1920" height="1046" />
     </state>
-    <state width="1874" height="342" key="GridCell.Tab.1.bottom/0.34.1920.1046/1920.312.1366.768@0.34.1920.1046" timestamp="1605451912953" />
-    <state width="1874" height="342" key="GridCell.Tab.1.center" timestamp="1605451912953">
+    <state width="1874" height="342" key="GridCell.Tab.1.bottom/0.34.1920.1046/1920.312.1366.768@0.34.1920.1046" timestamp="1605454183573" />
+    <state width="1874" height="342" key="GridCell.Tab.1.center" timestamp="1605454183572">
       <screen x="0" y="34" width="1920" height="1046" />
     </state>
-    <state width="1874" height="342" key="GridCell.Tab.1.center/0.34.1920.1046/1920.312.1366.768@0.34.1920.1046" timestamp="1605451912953" />
-    <state width="1874" height="342" key="GridCell.Tab.1.left" timestamp="1605451912953">
+    <state width="1874" height="342" key="GridCell.Tab.1.center/0.34.1920.1046/1920.312.1366.768@0.34.1920.1046" timestamp="1605454183572" />
+    <state width="1874" height="342" key="GridCell.Tab.1.left" timestamp="1605454183572">
       <screen x="0" y="34" width="1920" height="1046" />
     </state>
-    <state width="1874" height="342" key="GridCell.Tab.1.left/0.34.1920.1046/1920.312.1366.768@0.34.1920.1046" timestamp="1605451912953" />
-    <state width="1874" height="342" key="GridCell.Tab.1.right" timestamp="1605451912953">
+    <state width="1874" height="342" key="GridCell.Tab.1.left/0.34.1920.1046/1920.312.1366.768@0.34.1920.1046" timestamp="1605454183572" />
+    <state width="1874" height="342" key="GridCell.Tab.1.right" timestamp="1605454183573">
       <screen x="0" y="34" width="1920" height="1046" />
     </state>
-    <state width="1874" height="342" key="GridCell.Tab.1.right/0.34.1920.1046/1920.312.1366.768@0.34.1920.1046" timestamp="1605451912953" />
+    <state width="1874" height="342" key="GridCell.Tab.1.right/0.34.1920.1046/1920.312.1366.768@0.34.1920.1046" timestamp="1605454183573" />
     <state x="449" y="192" key="SettingsEditor" timestamp="1605406711256">
       <screen x="0" y="34" width="1920" height="1046" />
     </state>

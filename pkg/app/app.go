@@ -1,7 +1,7 @@
 package app
 
 import (
-	"ephelsa/my-career/pkg/env"
+	"ephelsa/my-career/internal/env"
 	"github.com/gofiber/fiber/v2"
 	"log"
 )

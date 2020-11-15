@@ -1,4 +1,5 @@
 /bin
+/data
 *.iml
 /.idea/caches
 /.idea/modules.xml

@@ -1,9 +1,8 @@
 package env
 
 import (
-	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"github.com/joho/godotenv"
 	"os"
 	"testing"
 
@@ -39,15 +38,22 @@ func Test_newConfig(t *testing.T) {
 }
 
 func openConfigFile(fileName string) (*Config, error) {
-	file, err := ioutil.ReadFile(fileName)
+	env, err := godotenv.Read(fileName)
 	if err != nil {
-		return nil, fmt.Errorf("Can't open file: %s \n", err)
+		return nil, fmt.Errorf("Can't open %s with the error: %s \n", fileName, err)
 	}
 
-	config := Config{}
-	err = json.Unmarshal(file, &config)
-	if err != nil {
-		return nil, fmt.Errorf("Parse json error: %s \n", err)
+	config := Config{
+		Database: Database{
+			Username: env["DB_USER"],
+			Password: env["DB_PASSWORD"],
+			Name:     env["DB_NAME"],
+			Host:     env["DB_HOST"],
+			Port:     env["DB_PORT"],
+		},
+		Server: Server{
+			Port: env["SERVER_PORT"],
+		},
 	}
 
 	return &config, nil
@@ -90,7 +96,7 @@ func Test_Setup_Production(t *testing.T) {
 
 	db := map[string]interface{}{
 		"user": os.Getenv("DB_USER"),
-		"pass": os.Getenv("DB_PASS"),
+		"pass": os.Getenv("DB_PASSWORD"),
 		"name": os.Getenv("DB_NAME"),
 		"host": os.Getenv("DB_HOST"),
 		"port": os.Getenv("DB_PORT"),

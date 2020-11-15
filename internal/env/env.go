@@ -28,12 +28,12 @@ type Config struct {
 func Envs() Environments {
 	return Environments{
 		Production: EnvironmentFile{
-			Name:      "config.prod",
-			Extension: "json",
+			Name:      "prod",
+			Extension: "env",
 		},
 		Development: EnvironmentFile{
-			Name:      "config.dev",
-			Extension: "json",
+			Name:      "dev",
+			Extension: "env",
 		},
 	}
 }
@@ -49,32 +49,28 @@ type Environments struct {
 }
 
 func Setup() *Config {
-	var db map[string]interface{}
-	var server map[string]interface{}
+	var err error
 
 	if os.Getenv("ENV") == "prod" {
 		viper.AutomaticEnv()
-		db = map[string]interface{}{
-			"user": viper.Get("DB_USER"),
-			"pass": viper.Get("DB_PASS"),
-			"name": viper.Get("DB_NAME"),
-			"host": viper.Get("DB_HOST"),
-			"port": viper.Get("DB_PORT"),
-		}
-		err := viperReadConfigFile(Envs().Production)
-		if err != nil {
-			panic(err)
-		}
-
-		server = viper.GetStringMap("server")
+		err = viperReadConfigFile(Envs().Production)
 	} else {
-		err := viperReadConfigFile(Envs().Development)
-		if err != nil {
-			panic(err)
-		}
+		err = viperReadConfigFile(Envs().Development)
+	}
 
-		db = viper.GetStringMap("database")
-		server = viper.GetStringMap("server")
+	if err != nil {
+		panic(err)
+	}
+
+	db := map[string]interface{}{
+		"user": viper.Get("DB_USER"),
+		"pass": viper.Get("DB_PASSWORD"),
+		"name": viper.Get("DB_NAME"),
+		"host": viper.Get("DB_HOST"),
+		"port": viper.Get("DB_PORT"),
+	}
+	server := map[string]interface{}{
+		"port": viper.Get("SERVER_PORT"),
 	}
 
 	conf, err := newConfig(db, server)

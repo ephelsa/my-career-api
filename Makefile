@@ -5,4 +5,7 @@ lint-prepare:
 lint:
 	./bin/golangci-lint run ./...
 
+test:
+	go test -v -cover -covermode=atomic ./...
+
 .PHONY: lint-prepare lint

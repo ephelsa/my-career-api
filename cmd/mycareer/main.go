@@ -1,8 +1,8 @@
 package main
 
 import (
+	"ephelsa/my-career/internal/env"
 	"ephelsa/my-career/pkg/app"
-	"ephelsa/my-career/pkg/env"
 )
 
 func main() {

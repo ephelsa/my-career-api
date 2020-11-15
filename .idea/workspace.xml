@@ -22,14 +22,13 @@
     <select />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="d9ee1e79-dda4-44f7-9bd3-61ba8d8e2e0f" name="Default Changelist" comment="Server config port added">
+    <list default="true" id="d9ee1e79-dda4-44f7-9bd3-61ba8d8e2e0f" name="Default Changelist" comment="pretty envs">
+      <change afterPath="$PROJECT_DIR$/.github/workflows/golangci-lint.yml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/pkg/app/app.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.github/workflows/go.yml" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/cmd/mycareer/main.go" beforeDir="false" afterPath="$PROJECT_DIR$/cmd/mycareer/main.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/go.mod" beforeDir="false" afterPath="$PROJECT_DIR$/go.mod" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pkg/config/config.dev.json" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/env/config.dev.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pkg/config/config.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/env/env.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pkg/config/config.prod.json" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/env/config.prod.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pkg/config/config_test.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/env/env_test.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/env/env.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/env/env.go" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -71,17 +70,19 @@
     <property name="configurable.Project.GOPATH.is.expanded" value="true" />
     <property name="go.import.settings.migrated" value="true" />
     <property name="go.tried.to.enable.integration.vgo.integrator" value="true" />
-    <property name="last_opened_file_path" value="$USER_HOME$" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$/../go-clean-arch" />
     <property name="settings.editor.selected.configurable" value="com.goide.configuration.GoLibrariesConfigurableProvider" />
   </component>
   <component name="RecentsManager">
     <key name="MoveFile.RECENT_KEYS">
-      <recent name="$PROJECT_DIR$/pkg/api" />
+      <recent name="$PROJECT_DIR$/pkg/app" />
       <recent name="$PROJECT_DIR$/pkg" />
+      <recent name="$PROJECT_DIR$" />
+      <recent name="$PROJECT_DIR$/pkg/api" />
       <recent name="$PROJECT_DIR$/cmd/mycareer" />
     </key>
   </component>
-  <component name="RunManager" selected="Go Test.go test ephelsa/my-career/pkg/env">
+  <component name="RunManager" selected="Go Build.go build ephelsa/my-career/cmd/mycareer">
     <configuration name="go build ephelsa/my-career/cmd/mycareer" type="GoApplicationRunConfiguration" factoryName="Go Application" temporary="true" nameIsGenerated="true">
       <module name="mycareerapi" />
       <working_directory value="$PROJECT_DIR$" />
@@ -143,9 +144,9 @@
     </list>
     <recent_temporary>
       <list>
+        <item itemvalue="Go Build.go build ephelsa/my-career/cmd/mycareer" />
         <item itemvalue="Go Test.go test ephelsa/my-career/pkg/env" />
         <item itemvalue="Go Test.Test_Setup_Prod in ephelsa/my-career/pkg/env" />
-        <item itemvalue="Go Build.go build ephelsa/my-career/cmd/mycareer" />
         <item itemvalue="Go Test.Test_SetupEnvironment_Prod in ephelsa/my-career/pkg/config" />
         <item itemvalue="Go Test.Test_SetupEnvironment_Dev in ephelsa/my-career/pkg/config" />
       </list>
@@ -171,7 +172,8 @@
     <MESSAGE value="Fixed config" />
     <MESSAGE value="project structure refactored" />
     <MESSAGE value="Server config port added" />
-    <option name="LAST_COMMIT_MESSAGE" value="Server config port added" />
+    <MESSAGE value="pretty envs" />
+    <option name="LAST_COMMIT_MESSAGE" value="pretty envs" />
   </component>
   <component name="VgoProject">
     <integration-enabled>true</integration-enabled>
@@ -213,42 +215,42 @@
       <screen x="0" y="34" width="1920" height="1046" />
     </state>
     <state x="842" y="424" width="309" height="257" key="EnvironmentVariablesDialog/0.34.1920.1046/1920.312.1366.768@0.34.1920.1046" timestamp="1605415975254" />
-    <state x="738" y="312" width="424" height="480" key="FileChooserDialogImpl" timestamp="1605406708791">
+    <state x="738" y="312" width="424" height="480" key="FileChooserDialogImpl" timestamp="1605463256741">
       <screen x="0" y="34" width="1920" height="1046" />
     </state>
-    <state x="738" y="312" width="424" height="480" key="FileChooserDialogImpl/0.34.1920.1046/1920.312.1366.768@0.34.1920.1046" timestamp="1605406708791" />
-    <state width="1874" height="277" key="GridCell.Tab.0.bottom" timestamp="1605457407978">
+    <state x="738" y="312" width="424" height="480" key="FileChooserDialogImpl/0.34.1920.1046/1920.312.1366.768@0.34.1920.1046" timestamp="1605463256741" />
+    <state width="1874" height="277" key="GridCell.Tab.0.bottom" timestamp="1605464235456">
       <screen x="0" y="34" width="1920" height="1046" />
     </state>
-    <state width="1874" height="277" key="GridCell.Tab.0.bottom/0.34.1920.1046/1920.312.1366.768@0.34.1920.1046" timestamp="1605457407978" />
-    <state width="1874" height="277" key="GridCell.Tab.0.center" timestamp="1605457407978">
+    <state width="1874" height="277" key="GridCell.Tab.0.bottom/0.34.1920.1046/1920.312.1366.768@0.34.1920.1046" timestamp="1605464235456" />
+    <state width="1874" height="277" key="GridCell.Tab.0.center" timestamp="1605464235455">
       <screen x="0" y="34" width="1920" height="1046" />
     </state>
-    <state width="1874" height="277" key="GridCell.Tab.0.center/0.34.1920.1046/1920.312.1366.768@0.34.1920.1046" timestamp="1605457407978" />
-    <state width="1874" height="277" key="GridCell.Tab.0.left" timestamp="1605457407978">
+    <state width="1874" height="277" key="GridCell.Tab.0.center/0.34.1920.1046/1920.312.1366.768@0.34.1920.1046" timestamp="1605464235455" />
+    <state width="1874" height="277" key="GridCell.Tab.0.left" timestamp="1605464235455">
       <screen x="0" y="34" width="1920" height="1046" />
     </state>
-    <state width="1874" height="277" key="GridCell.Tab.0.left/0.34.1920.1046/1920.312.1366.768@0.34.1920.1046" timestamp="1605457407978" />
-    <state width="1874" height="277" key="GridCell.Tab.0.right" timestamp="1605457407978">
+    <state width="1874" height="277" key="GridCell.Tab.0.left/0.34.1920.1046/1920.312.1366.768@0.34.1920.1046" timestamp="1605464235455" />
+    <state width="1874" height="277" key="GridCell.Tab.0.right" timestamp="1605464235455">
       <screen x="0" y="34" width="1920" height="1046" />
     </state>
-    <state width="1874" height="277" key="GridCell.Tab.0.right/0.34.1920.1046/1920.312.1366.768@0.34.1920.1046" timestamp="1605457407978" />
-    <state width="1874" height="342" key="GridCell.Tab.1.bottom" timestamp="1605454183573">
+    <state width="1874" height="277" key="GridCell.Tab.0.right/0.34.1920.1046/1920.312.1366.768@0.34.1920.1046" timestamp="1605464235455" />
+    <state width="1874" height="342" key="GridCell.Tab.1.bottom" timestamp="1605463579182">
       <screen x="0" y="34" width="1920" height="1046" />
     </state>
-    <state width="1874" height="342" key="GridCell.Tab.1.bottom/0.34.1920.1046/1920.312.1366.768@0.34.1920.1046" timestamp="1605454183573" />
-    <state width="1874" height="342" key="GridCell.Tab.1.center" timestamp="1605454183572">
+    <state width="1874" height="342" key="GridCell.Tab.1.bottom/0.34.1920.1046/1920.312.1366.768@0.34.1920.1046" timestamp="1605463579182" />
+    <state width="1874" height="342" key="GridCell.Tab.1.center" timestamp="1605463579181">
       <screen x="0" y="34" width="1920" height="1046" />
     </state>
-    <state width="1874" height="342" key="GridCell.Tab.1.center/0.34.1920.1046/1920.312.1366.768@0.34.1920.1046" timestamp="1605454183572" />
-    <state width="1874" height="342" key="GridCell.Tab.1.left" timestamp="1605454183572">
+    <state width="1874" height="342" key="GridCell.Tab.1.center/0.34.1920.1046/1920.312.1366.768@0.34.1920.1046" timestamp="1605463579181" />
+    <state width="1874" height="342" key="GridCell.Tab.1.left" timestamp="1605463579180">
       <screen x="0" y="34" width="1920" height="1046" />
     </state>
-    <state width="1874" height="342" key="GridCell.Tab.1.left/0.34.1920.1046/1920.312.1366.768@0.34.1920.1046" timestamp="1605454183572" />
-    <state width="1874" height="342" key="GridCell.Tab.1.right" timestamp="1605454183573">
+    <state width="1874" height="342" key="GridCell.Tab.1.left/0.34.1920.1046/1920.312.1366.768@0.34.1920.1046" timestamp="1605463579180" />
+    <state width="1874" height="342" key="GridCell.Tab.1.right" timestamp="1605463579181">
       <screen x="0" y="34" width="1920" height="1046" />
     </state>
-    <state width="1874" height="342" key="GridCell.Tab.1.right/0.34.1920.1046/1920.312.1366.768@0.34.1920.1046" timestamp="1605454183573" />
+    <state width="1874" height="342" key="GridCell.Tab.1.right/0.34.1920.1046/1920.312.1366.768@0.34.1920.1046" timestamp="1605463579181" />
     <state x="449" y="192" key="SettingsEditor" timestamp="1605406711256">
       <screen x="0" y="34" width="1920" height="1046" />
     </state>

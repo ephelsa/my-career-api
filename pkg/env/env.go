@@ -49,8 +49,8 @@ type Environments struct {
 }
 
 func Setup() *Config {
-	var db = map[string]interface{}{}
-	var server = map[string]interface{}{}
+	var db map[string]interface{}
+	var server map[string]interface{}
 
 	if os.Getenv("ENV") == "prod" {
 		viper.AutomaticEnv()

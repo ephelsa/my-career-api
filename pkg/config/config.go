@@ -36,7 +36,8 @@ func SetupEnvironment() *Configuration {
 	} else {
 		viper.SetConfigName("config.dev")
 		viper.SetConfigType("json")
-		viper.AddConfigPath(".")
+		viper.AddConfigPath("./pkg/config") // for build
+		viper.AddConfigPath(".")            // for test
 		err := viper.ReadInConfig()
 		if err != nil {
 			panic(fmt.Errorf("Fatal error config file: %s \n", err))

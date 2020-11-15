@@ -1,8 +1,9 @@
 package main
 
 import (
-	"ephelsa/my-career/config"
 	"fmt"
+
+	"ephelsa/my-career/pkg/config"
 )
 
 func main() {

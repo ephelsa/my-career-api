@@ -45,4 +45,3 @@ jobs:
           source: "./api-build"
           target: "/home/my-career"
 
-      - name: Deploying

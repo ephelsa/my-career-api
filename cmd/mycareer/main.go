@@ -9,9 +9,8 @@ import (
 func main() {
 	envConfig := env.Setup()
 
-	api := server.NewServer(envConfig.Server.Port)
 	db := database.NewDatabase(envConfig.Database)
-
-	api.Start()
 	db.Connect()
+	api := server.NewServer(envConfig.Server.Port)
+	api.Start()
 }

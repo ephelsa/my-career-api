@@ -1,0 +1,21 @@
+name: Deploy new version
+
+on:
+  push:
+    tags: [ v* ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Copy files via SCP
+        uses: appleboy/scp-action@master
+        env:
+          HOST: ${{ secrets.REMOTE_HOST }}
+          USERNAME: ${{ secrets.REMOTE_USERNAME }}
+          PORT: ${{ secrets.REMOTE_PORT }}
+          KEY: ${{ secrets.REMOTE_SSHKEY }}
+        with:
+          source: "."
+          target: "/opt/api"

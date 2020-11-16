@@ -1,32 +1,41 @@
 package database
 
 import (
-	"context"
+	"database/sql"
 	"ephelsa/my-career/internal/env"
-	"fmt"
-	"github.com/jackc/pgx/v4/pgxpool"
+	"log"
+	"sync"
 )
 
-type Database struct {
-	URI  string
-	Pool *pgxpool.Pool
+type Data struct {
+	Database *sql.DB
 }
 
-func NewDatabase(db env.Database) *Database {
-	return &Database{
-		URI: fmt.Sprintf("postgres://%s:%s@%s:%s/%s", db.Username, db.Password, db.Host, db.Port, db.Name),
+func New(db env.Database) *Data {
+	var (
+		once sync.Once
+		data *Data
+	)
+
+	once.Do(func() {
+		db, err := postgresConnection(db)
+		if err != nil {
+			log.Panic(err)
+		}
+		if err := db.Ping(); err != nil {
+			log.Panic(err)
+		}
+
+		data = &Data{
+			Database: db,
+		}
+	})
+
+	return data
+}
+
+func (d *Data) Close() {
+	if err := d.Database.Close(); err != nil {
+		log.Panic(err)
 	}
-}
-
-func (d *Database) Connect() {
-	pool, err := pgxpool.Connect(context.Background(), d.URI)
-	d.Pool = pool
-	if err != nil {
-		panic(fmt.Errorf("Error connecting with database %s \n", err))
-	}
-	defer pool.Close()
-}
-
-func (d *Database) CloseConnection() {
-	d.Pool.Close()
 }

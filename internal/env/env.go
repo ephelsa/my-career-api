@@ -84,8 +84,8 @@ func Setup() *Config {
 func viperReadConfigFile(file EnvironmentFile) error {
 	viper.SetConfigName(file.Name)
 	viper.SetConfigType(file.Extension)
-	viper.AddConfigPath("./pkg/env") // for build
-	viper.AddConfigPath(".")         // for test
+	viper.AddConfigPath("./internal/env") // for build
+	viper.AddConfigPath(".")              // for test
 
 	err := viper.ReadInConfig()
 	if err != nil {

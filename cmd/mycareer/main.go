@@ -1,11 +1,17 @@
 package main
 
 import (
+	"ephelsa/my-career/internal/database"
 	"ephelsa/my-career/internal/env"
-	"ephelsa/my-career/pkg/app"
+	"ephelsa/my-career/internal/server"
 )
 
 func main() {
 	envConfig := env.Setup()
-	app.StartApi(envConfig.Server)
+
+	api := server.NewServer(envConfig.Server.Port)
+	db := database.NewDatabase(envConfig.Database)
+
+	api.Start()
+	db.Connect()
 }

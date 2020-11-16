@@ -2,10 +2,10 @@ package env
 
 import (
 	"fmt"
-	"github.com/joho/godotenv"
 	"os"
 	"testing"
 
+	"github.com/joho/godotenv"
 	"github.com/magiconair/properties/assert"
 )
 

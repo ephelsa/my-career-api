@@ -5,10 +5,10 @@ services:
     image: postgres
     container_name: "my-career-dev_database"
     volumes:
-      - ./data:/var/lib/postgresql/data
+      - ./data/dev-database.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - 5432:${DB_PORT}
     environment:
       - POSTGRES_DB=${DB_NAME}
       - POSTGRES_USER=${DB_USER}
       - POSTGRES_PASSWORD=${DB_PASSWORD}
-    ports:
-      - "5432:5432"

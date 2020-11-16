@@ -9,7 +9,7 @@ import (
 func main() {
 	envConfig := env.Setup()
 
-	db := database.New(envConfig.Database)
+	db := database.New(envConfig.Database)	//nolint:staticcheck
 	api := server.New(envConfig.Server.Port)
 
 

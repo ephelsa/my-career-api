@@ -4,6 +4,7 @@ import (
 	"ephelsa/my-career/pkg/infraestructure/database"
 	"fmt"
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/logger"
 	"log"
 )
 
@@ -60,4 +61,8 @@ func (s *Server) Router() {
 
 		return c.JSON(result)
 	})
+}
+
+func (s *Server) Middleware() {
+	s.App.Use(logger.New())
 }

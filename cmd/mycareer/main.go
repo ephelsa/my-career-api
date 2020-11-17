@@ -11,6 +11,7 @@ func main() {
 	db := database.New(envConfig.Database) //nolint:staticcheck
 	api := server.New(db)
 
+	api.Middleware()
 	api.Router()
 	api.Start(envConfig.Server.Port)
 	api.Close()

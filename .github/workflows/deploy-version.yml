@@ -55,4 +55,4 @@ jobs:
           USERNAME: ${{ secrets.REMOTE_USERNAME }}
           PORT: ${{ secrets.REMOTE_PORT }}
           KEY: ${{ secrets.REMOTE_SSHKEY }}
-          script: sh /home/my-career/apirest_up.sh /home/my-career/prod.env ${{ steps.api_version.outputs.version }}
+          script: cd /home/my-career/ && sh apirest_up.sh prod.env ${{ steps.api_version.outputs.version }}

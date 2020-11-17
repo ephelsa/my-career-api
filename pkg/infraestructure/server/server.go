@@ -2,6 +2,7 @@ package server
 
 import (
 	"ephelsa/my-career/pkg/infraestructure/database"
+	"fmt"
 	"github.com/gofiber/fiber/v2"
 	"log"
 )
@@ -22,7 +23,7 @@ func New(data *database.Information) *Server {
 }
 
 func (s *Server) Start(port string) {
-	log.Fatal(s.App.Listen(port))
+	log.Fatal(s.App.Listen(fmt.Sprintf(":%s", port)))
 }
 
 func (s *Server) Close() {

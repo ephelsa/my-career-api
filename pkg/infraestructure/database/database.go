@@ -7,14 +7,14 @@ import (
 	"sync"
 )
 
-type Data struct {
-	Database *sql.DB
+type Information struct {
+	Instance *sql.DB
 }
 
-func New(db env.Database) *Data {
+func New(db env.Database) *Information {
 	var (
 		once sync.Once
-		data *Data
+		data *Information
 	)
 
 	once.Do(func() {
@@ -26,16 +26,16 @@ func New(db env.Database) *Data {
 			log.Panic(err)
 		}
 
-		data = &Data{
-			Database: db,
+		data = &Information{
+			Instance: db,
 		}
 	})
 
 	return data
 }
 
-func (d *Data) Close() {
-	if err := d.Database.Close(); err != nil {
+func (d *Information) Close() {
+	if err := d.Instance.Close(); err != nil {
 		log.Panic(err)
 	}
 }

@@ -37,9 +37,6 @@ jobs:
       - name: Generate Build
         run: make build BUILD_NAME="./api-build"
 
-      - name: Version
-        run: echo "Version ${{ steps.api_version.outputs.version }}"
-
       - name: Copy API build generated
         uses: appleboy/scp-action@master
         env:

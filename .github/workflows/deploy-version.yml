@@ -20,6 +20,11 @@ jobs:
       - name: Check out code into Go module directory
         uses: actions/checkout@v2
 
+      - name: API version
+        id: api_version
+        run: |
+          echo "::set-output name=version::$(git describe --tags 2>/dev/null || git rev-parse --short HEAD)"
+
       - name: Download dependencies
         run: |
           go get -v -t -d ./...
@@ -33,6 +38,9 @@ jobs:
 
       - name: Generate Build
         run: make build BUILD_NAME="./api-build"
+
+      - name: Version
+        run: echo "Version ${{ steps.api_version.outputs.version }}
 
       - name: Copy API build generated
         uses: appleboy/scp-action@master

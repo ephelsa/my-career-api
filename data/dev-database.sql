@@ -16,9 +16,13 @@ SET xmloption = content;
 SET client_min_messages = warning;
 SET row_security = off;
 
+DROP DATABASE IF EXISTS my_career_dev;
 --
 -- Name: my_career_dev; Type: DATABASE; Schema: -; Owner: developer
 --
+
+CREATE DATABASE my_career_dev WITH TEMPLATE = template0 ENCODING = 'UTF8' LOCALE = 'en_US.utf8';
+
 
 ALTER DATABASE my_career_dev OWNER TO developer;
 
@@ -35,17 +39,444 @@ SET xmloption = content;
 SET client_min_messages = warning;
 SET row_security = off;
 
+--
+-- Name: pgcrypto; Type: EXTENSION; Schema: -; Owner: -
+--
+
+CREATE EXTENSION IF NOT EXISTS pgcrypto WITH SCHEMA public;
+
+
+--
+-- Name: EXTENSION pgcrypto; Type: COMMENT; Schema: -; Owner: 
+--
+
+COMMENT ON EXTENSION pgcrypto IS 'cryptographic functions';
+
+
+--
+-- Name: authenticate_user(text, text); Type: FUNCTION; Schema: public; Owner: developer
+--
+
+CREATE FUNCTION public.authenticate_user(u_email text, u_pass text) RETURNS boolean
+    LANGUAGE plpgsql
+    AS $$
+DECLARE
+    match BOOLEAN DEFAULT FALSE;
+BEGIN
+    IF (check_user_existence(u_email)) THEN
+        -- Probably could add registry confirmation validation.
+        SELECT (password = crypt(u_pass, password))
+        INTO match
+        FROM "user"
+        WHERE email = u_email;
+    END IF;
+
+    RETURN match;
+END;
+$$;
+
+
+ALTER FUNCTION public.authenticate_user(u_email text, u_pass text) OWNER TO developer;
+
+--
+-- Name: check_user_existence(text); Type: FUNCTION; Schema: public; Owner: developer
+--
+
+CREATE FUNCTION public.check_user_existence(u_email text) RETURNS boolean
+    LANGUAGE plpgsql
+    AS $$
+DECLARE
+    exists BOOLEAN DEFAULT false;
+BEGIN
+    SELECT (count(email) > 0)
+    INTO exists
+    FROM "user"
+    WHERE email = u_email;
+
+    RETURN exists;
+END;
+$$;
+
+
+ALTER FUNCTION public.check_user_existence(u_email text) OWNER TO developer;
+
+--
+-- Name: check_user_registry_confirmed(text); Type: FUNCTION; Schema: public; Owner: developer
+--
+
+CREATE FUNCTION public.check_user_registry_confirmed(u_email text) RETURNS boolean
+    LANGUAGE plpgsql
+    AS $$
+DECLARE
+    confirmed BOOLEAN DEFAULT false;
+BEGIN
+    SELECT COUNT(registry_confirmed) > 0
+    INTO confirmed
+    FROM "user"
+    WHERE email = u_email
+      AND registry_confirmed = true;
+
+    RETURN confirmed;
+END;
+$$;
+
+
+ALTER FUNCTION public.check_user_registry_confirmed(u_email text) OWNER TO developer;
+
+--
+-- Name: cypher_new_user_pass(); Type: FUNCTION; Schema: public; Owner: developer
+--
+
+CREATE FUNCTION public.cypher_new_user_pass() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+    UPDATE "user" SET password = encrypt_user_password(NEW.password) WHERE email = NEW.email;
+    RETURN NEW;
+END;
+$$;
+
+
+ALTER FUNCTION public.cypher_new_user_pass() OWNER TO developer;
+
+--
+-- Name: encrypt_user_password(text); Type: FUNCTION; Schema: public; Owner: developer
+--
+
+CREATE FUNCTION public.encrypt_user_password(pass text) RETURNS text
+    LANGUAGE sql
+    AS $$
+SELECT crypt(pass, gen_salt('bf'));
+$$;
+
+
+ALTER FUNCTION public.encrypt_user_password(pass text) OWNER TO developer;
+
+--
+-- Name: process_user_answer_audit(); Type: FUNCTION; Schema: public; Owner: developer
+--
+
+CREATE FUNCTION public.process_user_answer_audit() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+    IF (TG_OP = 'DELETE') THEN
+        INSERT INTO log_user_answer (operation, time_stamp, email, document_type, document, question, survey, answer)
+        SELECT 'D', now(), OLD.email, OLD.document_type, OLD.document, OLD.question, OLD.survey, OLD.answer;
+        RETURN OLD;
+    ELSIF (TG_OP = 'UPDATE') THEN
+        INSERT INTO log_user_answer (operation, time_stamp, email, document_type, document, question, survey, answer)
+        SELECT 'U', now(), NEW.email, NEW.document_type, NEW.document, NEW.question, NEW.survey, NEW.answer;
+        RETURN NEW;
+    ELSIF (TG_OP = 'INSERT') THEN
+        INSERT INTO log_user_answer (operation, time_stamp, email, document_type, document, question, survey, answer)
+        SELECT 'I', now(), NEW.email, NEW.document_type, NEW.document, NEW.question, NEW.survey, NEW.answer;
+        RETURN NEW;
+    END IF;
+
+    RETURN NULL; -- result is ignored since this is an AFTER trigger
+END;
+$$;
+
+
+ALTER FUNCTION public.process_user_answer_audit() OWNER TO developer;
+
+--
+-- Name: process_user_audit(); Type: FUNCTION; Schema: public; Owner: developer
+--
+
+CREATE FUNCTION public.process_user_audit() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+    IF (TG_OP = 'DELETE') THEN
+        INSERT INTO log_user (operation, time_stamp, email, document_type, document, first_name, second_name,
+                              first_surname, second_surname, password, institution_name, study_level, institution_type,
+                              registry_confirmed, department_code, municipality_code, country_code)
+        SELECT 'D',
+               now(),
+               OLD.email,
+               OLD.document_type,
+               OLD.document,
+               OLD.first_name,
+               OLD.second_name,
+               OLD.first_surname,
+               OLD.second_surname,
+               encrypt_user_password(OLD.password),
+               OLD.institution_name,
+               OLD.study_level,
+               OLD.institution_type,
+               OLD.registry_confirmed,
+               OLD.department_code,
+               OLD.municipality_code,
+               OLD.country_code;
+        RETURN OLD;
+    ELSIF (TG_OP = 'UPDATE') THEN
+        INSERT INTO log_user (operation, time_stamp, email, document_type, document, first_name, second_name,
+                              first_surname, second_surname, password, institution_name, study_level, institution_type,
+                              registry_confirmed, department_code, municipality_code, country_code)
+        SELECT 'U',
+               now(),
+               NEW.email,
+               NEW.document_type,
+               NEW.document,
+               NEW.first_name,
+               NEW.second_name,
+               NEW.first_surname,
+               NEW.second_surname,
+               encrypt_user_password(NEW.password),
+               NEW.institution_name,
+               NEW.study_level,
+               NEW.institution_type,
+               NEW.registry_confirmed,
+               NEW.department_code,
+               NEW.municipality_code,
+               NEW.country_code;
+        RETURN NEW;
+    ELSIF (TG_OP = 'INSERT') THEN
+        INSERT INTO log_user (operation, time_stamp, email, document_type, document, first_name, second_name,
+                              first_surname, second_surname, password, institution_name, study_level, institution_type,
+                              registry_confirmed, department_code, municipality_code, country_code)
+        SELECT 'I',
+               now(),
+               NEW.email,
+               NEW.document_type,
+               NEW.document,
+               NEW.first_name,
+               NEW.second_name,
+               NEW.first_surname,
+               NEW.second_surname,
+               encrypt_user_password(NEW.password),
+               NEW.institution_name,
+               NEW.study_level,
+               NEW.institution_type,
+               NEW.registry_confirmed,
+               NEW.department_code,
+               NEW.municipality_code,
+               NEW.country_code;
+        RETURN NEW;
+    END IF;
+
+    RETURN NULL; -- result is ignored since this is an AFTER trigger
+END;
+$$;
+
+
+ALTER FUNCTION public.process_user_audit() OWNER TO developer;
+
+--
+-- Name: retrieve_poll(integer); Type: FUNCTION; Schema: public; Owner: developer
+--
+
+CREATE FUNCTION public.retrieve_poll(poll_id integer) RETURNS TABLE(survey_id integer, survey_name text, question_id integer, question text, question_type text, option_id integer, option text)
+    LANGUAGE sql
+    AS $$
+SELECT s.id AS surve_id,
+       s.name,
+       q.id AS question_id,
+       q.question,
+       qt.type,
+       a.id AS option_id,
+       a.option
+FROM survey s
+         INNER JOIN survey_question sq
+                    ON s.id = sq.survey_id
+         INNER JOIN question q ON q.id = sq.question_id
+         INNER JOIN question_type qt ON q.question_type = qt.id
+         LEFT JOIN answer_options ao ON q.answer_options = ao.code
+         LEFT JOIN answer_option a ON ao.answer_option = a.id
+WHERE s.id = poll_id
+ORDER BY q.id, a.option;
+$$;
+
+
+ALTER FUNCTION public.retrieve_poll(poll_id integer) OWNER TO developer;
+
+--
+-- Name: retrieve_survey_answers_by_user_survey(text, integer); Type: FUNCTION; Schema: public; Owner: developer
+--
+
+CREATE FUNCTION public.retrieve_survey_answers_by_user_survey(u_email text, survey_id integer) RETURNS TABLE(email text, question text, answer text)
+    LANGUAGE sql
+    AS $$
+SELECT ua."user" AS email,
+       q.question,
+       CASE
+           WHEN ao.option is null THEN ua.answer
+           ELSE ao.option
+           END      answer
+FROM user_answer ua
+         INNER JOIN question q ON q.id = ua.question
+         LEFT JOIN answer_option ao ON ua.answer = ao.id::text
+WHERE ua."user" = u_email AND ua.survey = survey_id;
+$$;
+
+
+ALTER FUNCTION public.retrieve_survey_answers_by_user_survey(u_email text, survey_id integer) OWNER TO developer;
+
 SET default_tablespace = '';
 
 SET default_table_access_method = heap;
+
+--
+-- Name: user; Type: TABLE; Schema: public; Owner: developer
+--
+
+CREATE TABLE public."user" (
+    first_name text NOT NULL,
+    second_name text,
+    first_surname text NOT NULL,
+    second_surname text NOT NULL,
+    email text NOT NULL,
+    password text NOT NULL,
+    document_type character(5) NOT NULL,
+    institution_name text NOT NULL,
+    study_level integer NOT NULL,
+    institution_type integer NOT NULL,
+    registry_confirmed boolean DEFAULT false NOT NULL,
+    department_code text NOT NULL,
+    municipality_code text NOT NULL,
+    country_code text,
+    document text NOT NULL
+);
+
+
+ALTER TABLE public."user" OWNER TO developer;
+
+--
+-- Name: TABLE "user"; Type: COMMENT; Schema: public; Owner: developer
+--
+
+COMMENT ON TABLE public."user" IS 'User information';
+
+
+--
+-- Name: update_user_pass(text, text, text); Type: FUNCTION; Schema: public; Owner: developer
+--
+
+CREATE FUNCTION public.update_user_pass(u_email text, old_pass text, new_pass text) RETURNS public."user"
+    LANGUAGE plpgsql
+    AS $$
+DECLARE
+    u_user "user";
+BEGIN
+    IF (authenticate_user(u_email, old_pass)) THEN
+        UPDATE "user" SET password = encrypt_user_password(new_pass) WHERE email = u_email;
+        SELECT * INTO u_user FROM "user" WHERE email = u_email;
+
+        RETURN u_user;
+    ELSE
+        RAISE EXCEPTION '% must be auth', u_email;
+    END IF;
+END;
+$$;
+
+
+ALTER FUNCTION public.update_user_pass(u_email text, old_pass text, new_pass text) OWNER TO developer;
+
+--
+-- Name: answer_option; Type: TABLE; Schema: public; Owner: developer
+--
+
+CREATE TABLE public.answer_option (
+    id integer NOT NULL,
+    option text NOT NULL
+);
+
+
+ALTER TABLE public.answer_option OWNER TO developer;
+
+--
+-- Name: TABLE answer_option; Type: COMMENT; Schema: public; Owner: developer
+--
+
+COMMENT ON TABLE public.answer_option IS 'Option for the answer_options';
+
+
+--
+-- Name: answer_option_id_seq; Type: SEQUENCE; Schema: public; Owner: developer
+--
+
+CREATE SEQUENCE public.answer_option_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.answer_option_id_seq OWNER TO developer;
+
+--
+-- Name: answer_option_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: developer
+--
+
+ALTER SEQUENCE public.answer_option_id_seq OWNED BY public.answer_option.id;
+
+
+--
+-- Name: answer_options; Type: TABLE; Schema: public; Owner: developer
+--
+
+CREATE TABLE public.answer_options (
+    id integer NOT NULL,
+    code integer NOT NULL,
+    answer_option integer
+);
+
+
+ALTER TABLE public.answer_options OWNER TO developer;
+
+--
+-- Name: TABLE answer_options; Type: COMMENT; Schema: public; Owner: developer
+--
+
+COMMENT ON TABLE public.answer_options IS 'Options for the question';
+
+
+--
+-- Name: answer_options_id_seq; Type: SEQUENCE; Schema: public; Owner: developer
+--
+
+CREATE SEQUENCE public.answer_options_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.answer_options_id_seq OWNER TO developer;
+
+--
+-- Name: answer_options_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: developer
+--
+
+ALTER SEQUENCE public.answer_options_id_seq OWNED BY public.answer_options.id;
+
+
+--
+-- Name: country; Type: TABLE; Schema: public; Owner: developer
+--
+
+CREATE TABLE public.country (
+    iso_code text NOT NULL,
+    name text NOT NULL
+);
+
+
+ALTER TABLE public.country OWNER TO developer;
 
 --
 -- Name: department; Type: TABLE; Schema: public; Owner: developer
 --
 
 CREATE TABLE public.department (
-    code integer NOT NULL,
-    name text NOT NULL
+    code text NOT NULL,
+    name text NOT NULL,
+    country_code text NOT NULL
 );
 
 
@@ -119,13 +550,66 @@ ALTER SEQUENCE public.institution_type_id_seq OWNED BY public.institution_type.i
 
 
 --
+-- Name: log_user; Type: TABLE; Schema: public; Owner: developer
+--
+
+CREATE TABLE public.log_user (
+    operation character(1) NOT NULL,
+    time_stamp timestamp without time zone NOT NULL,
+    email text,
+    document_type character varying(5),
+    document text,
+    first_name text,
+    second_name text,
+    first_surname text,
+    second_surname text,
+    password text,
+    institution_name text,
+    study_level integer,
+    institution_type integer,
+    registry_confirmed boolean,
+    department_code text,
+    municipality_code text,
+    country_code text
+);
+
+
+ALTER TABLE public.log_user OWNER TO developer;
+
+--
+-- Name: TABLE log_user; Type: COMMENT; Schema: public; Owner: developer
+--
+
+COMMENT ON TABLE public.log_user IS 'U after an I is the same, the U is the crypt password updated after a new register';
+
+
+--
+-- Name: log_user_answer; Type: TABLE; Schema: public; Owner: developer
+--
+
+CREATE TABLE public.log_user_answer (
+    email text NOT NULL,
+    survey integer,
+    question integer,
+    answer text,
+    time_stamp timestamp without time zone NOT NULL,
+    operation character(1) NOT NULL,
+    document_type character varying(5),
+    document text
+);
+
+
+ALTER TABLE public.log_user_answer OWNER TO developer;
+
+--
 -- Name: municipality; Type: TABLE; Schema: public; Owner: developer
 --
 
 CREATE TABLE public.municipality (
-    code integer NOT NULL,
-    department_code integer NOT NULL,
-    name text NOT NULL
+    code text NOT NULL,
+    department_code text NOT NULL,
+    name text NOT NULL,
+    country_code text NOT NULL
 );
 
 
@@ -136,6 +620,90 @@ ALTER TABLE public.municipality OWNER TO developer;
 --
 
 COMMENT ON TABLE public.municipality IS 'DANE municipality';
+
+
+--
+-- Name: question; Type: TABLE; Schema: public; Owner: developer
+--
+
+CREATE TABLE public.question (
+    id integer NOT NULL,
+    question text NOT NULL,
+    question_type integer NOT NULL,
+    answer_options integer
+);
+
+
+ALTER TABLE public.question OWNER TO developer;
+
+--
+-- Name: TABLE question; Type: COMMENT; Schema: public; Owner: developer
+--
+
+COMMENT ON TABLE public.question IS 'Questions for polls';
+
+
+--
+-- Name: question_id_seq; Type: SEQUENCE; Schema: public; Owner: developer
+--
+
+CREATE SEQUENCE public.question_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.question_id_seq OWNER TO developer;
+
+--
+-- Name: question_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: developer
+--
+
+ALTER SEQUENCE public.question_id_seq OWNED BY public.question.id;
+
+
+--
+-- Name: question_type; Type: TABLE; Schema: public; Owner: developer
+--
+
+CREATE TABLE public.question_type (
+    id integer NOT NULL,
+    type text NOT NULL
+);
+
+
+ALTER TABLE public.question_type OWNER TO developer;
+
+--
+-- Name: TABLE question_type; Type: COMMENT; Schema: public; Owner: developer
+--
+
+COMMENT ON TABLE public.question_type IS 'Type of questions';
+
+
+--
+-- Name: question_type_id_seq; Type: SEQUENCE; Schema: public; Owner: developer
+--
+
+CREATE SEQUENCE public.question_type_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.question_type_id_seq OWNER TO developer;
+
+--
+-- Name: question_type_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: developer
+--
+
+ALTER SEQUENCE public.question_type_id_seq OWNED BY public.question_type.id;
 
 
 --
@@ -180,33 +748,130 @@ ALTER SEQUENCE public.study_level_id_seq OWNED BY public.study_level.id;
 
 
 --
--- Name: user; Type: TABLE; Schema: public; Owner: developer
+-- Name: survey; Type: TABLE; Schema: public; Owner: developer
 --
 
-CREATE TABLE public."user" (
-    first_name text NOT NULL,
-    second_name text,
-    first_surname text NOT NULL,
-    second_surname text NOT NULL,
-    email text NOT NULL,
-    password text NOT NULL,
-    document_type character(5) NOT NULL,
-    institution_name text NOT NULL,
-    study_level integer NOT NULL,
-    institution_type integer NOT NULL,
-    registry_confirmed boolean DEFAULT false NOT NULL,
-    department_code integer NOT NULL,
-    municipality_code integer NOT NULL
+CREATE TABLE public.survey (
+    id integer NOT NULL,
+    name text NOT NULL,
+    description text
 );
 
 
-ALTER TABLE public."user" OWNER TO developer;
+ALTER TABLE public.survey OWNER TO developer;
 
 --
--- Name: TABLE "user"; Type: COMMENT; Schema: public; Owner: developer
+-- Name: TABLE survey; Type: COMMENT; Schema: public; Owner: developer
 --
 
-COMMENT ON TABLE public."user" IS 'User information';
+COMMENT ON TABLE public.survey IS 'Survey information';
+
+
+--
+-- Name: survey_info_code_seq; Type: SEQUENCE; Schema: public; Owner: developer
+--
+
+CREATE SEQUENCE public.survey_info_code_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.survey_info_code_seq OWNER TO developer;
+
+--
+-- Name: survey_info_code_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: developer
+--
+
+ALTER SEQUENCE public.survey_info_code_seq OWNED BY public.survey.id;
+
+
+--
+-- Name: survey_question; Type: TABLE; Schema: public; Owner: developer
+--
+
+CREATE TABLE public.survey_question (
+    survey_id integer NOT NULL,
+    question_id integer NOT NULL
+);
+
+
+ALTER TABLE public.survey_question OWNER TO developer;
+
+--
+-- Name: TABLE survey_question; Type: COMMENT; Schema: public; Owner: developer
+--
+
+COMMENT ON TABLE public.survey_question IS 'Intermediate table for survey and question';
+
+
+--
+-- Name: user_answer; Type: TABLE; Schema: public; Owner: developer
+--
+
+CREATE TABLE public.user_answer (
+    id integer NOT NULL,
+    email text NOT NULL,
+    question integer NOT NULL,
+    answer text,
+    survey integer NOT NULL,
+    document_type character varying(5),
+    document text
+);
+
+
+ALTER TABLE public.user_answer OWNER TO developer;
+
+--
+-- Name: TABLE user_answer; Type: COMMENT; Schema: public; Owner: developer
+--
+
+COMMENT ON TABLE public.user_answer IS 'Answers for the user';
+
+
+--
+-- Name: COLUMN user_answer.answer; Type: COMMENT; Schema: public; Owner: developer
+--
+
+COMMENT ON COLUMN public.user_answer.answer IS 'Can be an answer_option or something';
+
+
+--
+-- Name: user_answer_id_seq; Type: SEQUENCE; Schema: public; Owner: developer
+--
+
+CREATE SEQUENCE public.user_answer_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.user_answer_id_seq OWNER TO developer;
+
+--
+-- Name: user_answer_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: developer
+--
+
+ALTER SEQUENCE public.user_answer_id_seq OWNED BY public.user_answer.id;
+
+
+--
+-- Name: answer_option id; Type: DEFAULT; Schema: public; Owner: developer
+--
+
+ALTER TABLE ONLY public.answer_option ALTER COLUMN id SET DEFAULT nextval('public.answer_option_id_seq'::regclass);
+
+
+--
+-- Name: answer_options id; Type: DEFAULT; Schema: public; Owner: developer
+--
+
+ALTER TABLE ONLY public.answer_options ALTER COLUMN id SET DEFAULT nextval('public.answer_options_id_seq'::regclass);
 
 
 --
@@ -217,6 +882,20 @@ ALTER TABLE ONLY public.institution_type ALTER COLUMN id SET DEFAULT nextval('pu
 
 
 --
+-- Name: question id; Type: DEFAULT; Schema: public; Owner: developer
+--
+
+ALTER TABLE ONLY public.question ALTER COLUMN id SET DEFAULT nextval('public.question_id_seq'::regclass);
+
+
+--
+-- Name: question_type id; Type: DEFAULT; Schema: public; Owner: developer
+--
+
+ALTER TABLE ONLY public.question_type ALTER COLUMN id SET DEFAULT nextval('public.question_type_id_seq'::regclass);
+
+
+--
 -- Name: study_level id; Type: DEFAULT; Schema: public; Owner: developer
 --
 
@@ -224,12 +903,77 @@ ALTER TABLE ONLY public.study_level ALTER COLUMN id SET DEFAULT nextval('public.
 
 
 --
+-- Name: survey id; Type: DEFAULT; Schema: public; Owner: developer
+--
+
+ALTER TABLE ONLY public.survey ALTER COLUMN id SET DEFAULT nextval('public.survey_info_code_seq'::regclass);
+
+
+--
+-- Name: user_answer id; Type: DEFAULT; Schema: public; Owner: developer
+--
+
+ALTER TABLE ONLY public.user_answer ALTER COLUMN id SET DEFAULT nextval('public.user_answer_id_seq'::regclass);
+
+
+--
+-- Data for Name: answer_option; Type: TABLE DATA; Schema: public; Owner: developer
+--
+
+COPY public.answer_option (id, option) FROM stdin;
+1	Ingeniería de sistemas
+2	Ingeniería mecánica
+3	1
+4	2
+5	3
+6	4
+7	5
+8	Sí
+9	No
+10	Ingeniería electrónica
+11	Bioingeniería
+12	Indufácil
+13	Ingeniería eléctrica
+\.
+
+
+--
+-- Data for Name: answer_options; Type: TABLE DATA; Schema: public; Owner: developer
+--
+
+COPY public.answer_options (id, code, answer_option) FROM stdin;
+1	1	8
+2	1	9
+3	2	3
+4	2	4
+5	2	5
+6	2	6
+7	2	7
+8	3	1
+9	3	2
+10	3	10
+11	3	11
+12	3	12
+13	3	13
+\.
+
+
+--
+-- Data for Name: country; Type: TABLE DATA; Schema: public; Owner: developer
+--
+
+COPY public.country (iso_code, name) FROM stdin;
+CO	COLOMBIA
+\.
+
+
+--
 -- Data for Name: department; Type: TABLE DATA; Schema: public; Owner: developer
 --
 
-COPY public.department (code, name) FROM stdin;
-5	Antioquia
-70	Sucre
+COPY public.department (code, name, country_code) FROM stdin;
+70	SUCRE	CO
+05	ANTIOQUIA	CO
 \.
 
 
@@ -256,14 +1000,208 @@ COPY public.institution_type (id, value) FROM stdin;
 
 
 --
+-- Data for Name: log_user; Type: TABLE DATA; Schema: public; Owner: developer
+--
+
+COPY public.log_user (operation, time_stamp, email, document_type, document, first_name, second_name, first_surname, second_surname, password, institution_name, study_level, institution_type, registry_confirmed, department_code, municipality_code, country_code) FROM stdin;
+D	2020-11-19 06:39:33.103194	xephelsax@gmail.com	CC	1037656066	Leonardo	Andrés	Pérez	Castilla	$2a$06$4oXm91ib35u8gZupVGnB.OYIu5yhfdllOVL1ZoXH/jBinMHXXwHUe	Liceo Panamericano Campestre	4	2	f	70	001	CO
+I	2020-11-19 06:40:47.073915	xephelsax@gmail.com	CC	1037656066	Leonardo	Andrés	Pérez	Castill	$2a$06$q9kzAW1cng4Fl8ZpI/H3G.xNW/5uaV9KAg3exUkUkdBtIRbzuooWS	Liceo Panamericano Campestre	4	2	f	70	001	CO
+U	2020-11-19 06:41:12.615132	xephelsax@gmail.com	CC	1037656066	Leonardo		Pérez	Castill	$2a$06$t3GxPPktJgkrOP6IY3KgI.uPmRuxGrTxMG9mpo8kLFDHPKERtQCPa	Liceo Panamericano Campestre	4	2	f	70	001	CO
+U	2020-11-19 06:41:28.472277	xephelsax@gmail.com	CC	1037656066	Leonardo		Pérez	Castilla	$2a$06$PPV8j4vDVWZNZj1jBtAure5iQUftEHvhKF8MsBtfHx/U4u2VT2dmq	Liceo Panamericano Campestre	4	2	f	70	001	CO
+D	2020-11-19 06:42:46.412404	xephelsax@gmail.com	CC	1037656066	Leonardo		Pérez	Castilla	$2a$06$H5w/wYlgo5UHbB/7xak36eWI/3DE59kb0GAsP5NROVGYhx8tXnmOK	Liceo Panamericano Campestre	4	2	f	70	001	CO
+I	2020-11-19 06:56:50.385026	xephelsax@gmail.com	CC	1037656066	Leonardo		Pérez	Castilla	$2a$06$w2/JX8sDA6kH14tNVCUr7eKWMrFkNdCMDohlJixy.QxnAsFlH7Qgq	Liceo Panamericano Campestre	4	2	f	70	001	CO
+U	2020-11-19 06:56:50.385026	xephelsax@gmail.com	CC	1037656066	Leonardo		Pérez	Castilla	$2a$06$qa/K6SfjkS7fesNZPnMwGOa5kO7d0548lfa.a5eqCOcFjltPn88hW	Liceo Panamericano Campestre	4	2	f	70	001	CO
+U	2020-11-19 06:57:26.899852	xephelsax@gmail.com	CC	1037656066	Leonardo		Pérez	Castilla	$2a$06$B2u/HT8YItKD1Lz8l41w6Ov41xj8/eNsj6bOarckri/K4W16qkKDa	Liceo Panamericano Campestre	4	2	f	70	001	CO
+\.
+
+
+--
+-- Data for Name: log_user_answer; Type: TABLE DATA; Schema: public; Owner: developer
+--
+
+COPY public.log_user_answer (email, survey, question, answer, time_stamp, operation, document_type, document) FROM stdin;
+\.
+
+
+--
 -- Data for Name: municipality; Type: TABLE DATA; Schema: public; Owner: developer
 --
 
-COPY public.municipality (code, department_code, name) FROM stdin;
-1	70	Sincelejo
-221	70	Coveñas
-1	5	Medellín
-266	5	Envigado
+COPY public.municipality (code, department_code, name, country_code) FROM stdin;
+110	70	BUENAVISTA	CO
+124	70	CAIMITO	CO
+204	70	COLOSO	CO
+215	70	COROZAL	CO
+221	70	COVEÑAS	CO
+230	70	CHALAN	CO
+233	70	EL ROBLE	CO
+235	70	GALERAS	CO
+265	70	GUARANDA	CO
+400	70	LA UNION	CO
+418	70	LOS PALMITOS	CO
+429	70	MAJAGUAL	CO
+473	70	MORROA	CO
+508	70	OVEJAS	CO
+523	70	PALMITO	CO
+670	70	SAMPUES	CO
+678	70	SAN BENITO ABAD	CO
+702	70	SAN JUAN DE BETULIA	CO
+708	70	SAN MARCOS	CO
+713	70	SAN ONOFRE	CO
+717	70	SAN PEDRO	CO
+742	70	SAN LUIS DE SINCE	CO
+771	70	SUCRE	CO
+820	70	SANTIAGO DE TOLU	CO
+823	70	TOLU VIEJO	CO
+001	70	SINCELEJO	CO
+001	05	MEDELLIN	CO
+002	05	ABEJORRAL	CO
+004	05	ABRIAQUI	CO
+021	05	ALEJANDRIA	CO
+030	05	AMAGA	CO
+031	05	AMALFI	CO
+034	05	ANDES	CO
+036	05	ANGELOPOLIS	CO
+038	05	ANGOSTURA	CO
+040	05	ANORI	CO
+042	05	SANTAFE DE ANTIOQUIA	CO
+044	05	ANZA	CO
+045	05	APARTADO	CO
+051	05	ARBOLETES	CO
+055	05	ARGELIA	CO
+059	05	ARMENIA	CO
+079	05	BARBOSA	CO
+086	05	BELMIRA	CO
+088	05	BELLO	CO
+091	05	BETANIA	CO
+093	05	BETULIA	CO
+101	05	CIUDAD BOLIVAR	CO
+107	05	BRICEÑO	CO
+113	05	BURITICA	CO
+120	05	CACERES	CO
+125	05	CAICEDO	CO
+129	05	CALDAS	CO
+134	05	CAMPAMENTO	CO
+138	05	CAÑASGORDAS	CO
+142	05	CARACOLI	CO
+145	05	CARAMANTA	CO
+147	05	CAREPA	CO
+148	05	EL CARMEN DE VIBORAL	CO
+150	05	CAROLINA	CO
+154	05	CAUCASIA	CO
+172	05	CHIGORODO	CO
+190	05	CISNEROS	CO
+197	05	COCORNA	CO
+206	05	CONCEPCION	CO
+209	05	CONCORDIA	CO
+212	05	COPACABANA	CO
+234	05	DABEIBA	CO
+237	05	DON MATIAS	CO
+240	05	EBEJICO	CO
+250	05	EL BAGRE	CO
+264	05	ENTRERRIOS	CO
+266	05	ENVIGADO	CO
+282	05	FREDONIA	CO
+284	05	FRONTINO	CO
+306	05	GIRALDO	CO
+308	05	GIRARDOTA	CO
+310	05	GOMEZ PLATA	CO
+313	05	GRANADA	CO
+315	05	GUADALUPE	CO
+318	05	GUARNE	CO
+321	05	GUATAPE	CO
+347	05	HELICONIA	CO
+353	05	HISPANIA	CO
+360	05	ITAGUI	CO
+361	05	ITUANGO	CO
+364	05	JARDIN	CO
+368	05	JERICO	CO
+376	05	LA CEJA	CO
+380	05	LA ESTRELLA	CO
+390	05	LA PINTADA	CO
+400	05	LA UNION	CO
+411	05	LIBORINA	CO
+425	05	MACEO	CO
+440	05	MARINILLA	CO
+467	05	MONTEBELLO	CO
+475	05	MURINDO	CO
+480	05	MUTATA	CO
+483	05	NARIÑO	CO
+490	05	NECOCLI	CO
+495	05	NECHI	CO
+501	05	OLAYA	CO
+541	05	PEÐOL	CO
+543	05	PEQUE	CO
+576	05	PUEBLORRICO	CO
+579	05	PUERTO BERRIO	CO
+585	05	PUERTO NARE	CO
+591	05	PUERTO TRIUNFO	CO
+604	05	REMEDIOS	CO
+607	05	RETIRO	CO
+615	05	RIONEGRO	CO
+628	05	SABANALARGA	CO
+631	05	SABANETA	CO
+642	05	SALGAR	CO
+647	05	SAN ANDRES DE CUERQUIA	CO
+649	05	SAN CARLOS	CO
+652	05	SAN FRANCISCO	CO
+656	05	SAN JERONIMO	CO
+658	05	SAN JOSE DE LA MONTAÑA	CO
+659	05	SAN JUAN DE URABA	CO
+660	05	SAN LUIS	CO
+664	05	SAN PEDRO	CO
+665	05	SAN PEDRO DE URABA	CO
+667	05	SAN RAFAEL	CO
+670	05	SAN ROQUE	CO
+674	05	SAN VICENTE	CO
+679	05	SANTA BARBARA	CO
+686	05	SANTA ROSA DE OSOS	CO
+690	05	SANTO DOMINGO	CO
+697	05	EL SANTUARIO	CO
+736	05	SEGOVIA	CO
+756	05	SONSON	CO
+761	05	SOPETRAN	CO
+789	05	TAMESIS	CO
+790	05	TARAZA	CO
+792	05	TARSO	CO
+809	05	TITIRIBI	CO
+819	05	TOLEDO	CO
+837	05	TURBO	CO
+842	05	URAMITA	CO
+847	05	URRAO	CO
+854	05	VALDIVIA	CO
+856	05	VALPARAISO	CO
+858	05	VEGACHI	CO
+861	05	VENECIA	CO
+873	05	VIGIA DEL FUERTE	CO
+885	05	YALI	CO
+887	05	YARUMAL	CO
+890	05	YOLOMBO	CO
+893	05	YONDO	CO
+895	05	ZARAGOZA	CO
+\.
+
+
+--
+-- Data for Name: question; Type: TABLE DATA; Schema: public; Owner: developer
+--
+
+COPY public.question (id, question, question_type, answer_options) FROM stdin;
+1	¿Te gusta el queso?	1	1
+2	¿Te gusta la patilla?	1	1
+3	¿Qué tanto te gusta leer?	1	2
+5	Institución donde estudias	2	\N
+6	¿Qué carrera estudias?	1	3
+\.
+
+
+--
+-- Data for Name: question_type; Type: TABLE DATA; Schema: public; Owner: developer
+--
+
+COPY public.question_type (id, type) FROM stdin;
+1	select
+2	text
 \.
 
 
@@ -282,11 +1220,58 @@ COPY public.study_level (id, value) FROM stdin;
 
 
 --
+-- Data for Name: survey; Type: TABLE DATA; Schema: public; Owner: developer
+--
+
+COPY public.survey (id, name, description) FROM stdin;
+1	Perfilamiento de prueba	Esta es una simple pruebita
+2	Otro questionario	\N
+\.
+
+
+--
+-- Data for Name: survey_question; Type: TABLE DATA; Schema: public; Owner: developer
+--
+
+COPY public.survey_question (survey_id, question_id) FROM stdin;
+1	1
+1	2
+2	3
+2	1
+1	5
+1	6
+\.
+
+
+--
 -- Data for Name: user; Type: TABLE DATA; Schema: public; Owner: developer
 --
 
-COPY public."user" (first_name, second_name, first_surname, second_surname, email, password, document_type, institution_name, study_level, institution_type, registry_confirmed, department_code, municipality_code) FROM stdin;
+COPY public."user" (first_name, second_name, first_surname, second_surname, email, password, document_type, institution_name, study_level, institution_type, registry_confirmed, department_code, municipality_code, country_code, document) FROM stdin;
+Leonardo		Pérez	Castilla	xephelsax@gmail.com	$2a$06$i8SN7PiprYns0RH4tgYR8e/0vi8XBKnYlyllyYpqyEf6vSAj8LD.u	CC   	Liceo Panamericano Campestre	4	2	f	70	001	CO	1037656066
 \.
+
+
+--
+-- Data for Name: user_answer; Type: TABLE DATA; Schema: public; Owner: developer
+--
+
+COPY public.user_answer (id, email, question, answer, survey, document_type, document) FROM stdin;
+\.
+
+
+--
+-- Name: answer_option_id_seq; Type: SEQUENCE SET; Schema: public; Owner: developer
+--
+
+SELECT pg_catalog.setval('public.answer_option_id_seq', 13, true);
+
+
+--
+-- Name: answer_options_id_seq; Type: SEQUENCE SET; Schema: public; Owner: developer
+--
+
+SELECT pg_catalog.setval('public.answer_options_id_seq', 13, true);
 
 
 --
@@ -297,6 +1282,20 @@ SELECT pg_catalog.setval('public.institution_type_id_seq', 3, true);
 
 
 --
+-- Name: question_id_seq; Type: SEQUENCE SET; Schema: public; Owner: developer
+--
+
+SELECT pg_catalog.setval('public.question_id_seq', 6, true);
+
+
+--
+-- Name: question_type_id_seq; Type: SEQUENCE SET; Schema: public; Owner: developer
+--
+
+SELECT pg_catalog.setval('public.question_type_id_seq', 2, true);
+
+
+--
 -- Name: study_level_id_seq; Type: SEQUENCE SET; Schema: public; Owner: developer
 --
 
@@ -304,11 +1303,49 @@ SELECT pg_catalog.setval('public.study_level_id_seq', 6, true);
 
 
 --
+-- Name: survey_info_code_seq; Type: SEQUENCE SET; Schema: public; Owner: developer
+--
+
+SELECT pg_catalog.setval('public.survey_info_code_seq', 2, true);
+
+
+--
+-- Name: user_answer_id_seq; Type: SEQUENCE SET; Schema: public; Owner: developer
+--
+
+SELECT pg_catalog.setval('public.user_answer_id_seq', 2, true);
+
+
+--
+-- Name: answer_option answer_option_pk; Type: CONSTRAINT; Schema: public; Owner: developer
+--
+
+ALTER TABLE ONLY public.answer_option
+    ADD CONSTRAINT answer_option_pk PRIMARY KEY (id);
+
+
+--
+-- Name: answer_options answer_options_pk; Type: CONSTRAINT; Schema: public; Owner: developer
+--
+
+ALTER TABLE ONLY public.answer_options
+    ADD CONSTRAINT answer_options_pk PRIMARY KEY (id);
+
+
+--
+-- Name: country country_pk; Type: CONSTRAINT; Schema: public; Owner: developer
+--
+
+ALTER TABLE ONLY public.country
+    ADD CONSTRAINT country_pk PRIMARY KEY (iso_code);
+
+
+--
 -- Name: department department_pk; Type: CONSTRAINT; Schema: public; Owner: developer
 --
 
 ALTER TABLE ONLY public.department
-    ADD CONSTRAINT department_pk PRIMARY KEY (code);
+    ADD CONSTRAINT department_pk PRIMARY KEY (country_code, code);
 
 
 --
@@ -332,7 +1369,23 @@ ALTER TABLE ONLY public.institution_type
 --
 
 ALTER TABLE ONLY public.municipality
-    ADD CONSTRAINT municipality_pk PRIMARY KEY (department_code, code);
+    ADD CONSTRAINT municipality_pk PRIMARY KEY (country_code, department_code, code);
+
+
+--
+-- Name: question question_pk; Type: CONSTRAINT; Schema: public; Owner: developer
+--
+
+ALTER TABLE ONLY public.question
+    ADD CONSTRAINT question_pk PRIMARY KEY (id);
+
+
+--
+-- Name: question_type question_type_pk; Type: CONSTRAINT; Schema: public; Owner: developer
+--
+
+ALTER TABLE ONLY public.question_type
+    ADD CONSTRAINT question_type_pk PRIMARY KEY (id);
 
 
 --
@@ -344,11 +1397,42 @@ ALTER TABLE ONLY public.study_level
 
 
 --
+-- Name: survey survey_info_pk; Type: CONSTRAINT; Schema: public; Owner: developer
+--
+
+ALTER TABLE ONLY public.survey
+    ADD CONSTRAINT survey_info_pk PRIMARY KEY (id);
+
+
+--
+-- Name: survey_question survey_question_pk; Type: CONSTRAINT; Schema: public; Owner: developer
+--
+
+ALTER TABLE ONLY public.survey_question
+    ADD CONSTRAINT survey_question_pk PRIMARY KEY (question_id, survey_id);
+
+
+--
+-- Name: user_answer user_answer_pk; Type: CONSTRAINT; Schema: public; Owner: developer
+--
+
+ALTER TABLE ONLY public.user_answer
+    ADD CONSTRAINT user_answer_pk PRIMARY KEY (id);
+
+
+--
 -- Name: user user_pk; Type: CONSTRAINT; Schema: public; Owner: developer
 --
 
 ALTER TABLE ONLY public."user"
-    ADD CONSTRAINT user_pk PRIMARY KEY (email);
+    ADD CONSTRAINT user_pk PRIMARY KEY (email, document, document_type);
+
+
+--
+-- Name: answer_option_option_uindex; Type: INDEX; Schema: public; Owner: developer
+--
+
+CREATE UNIQUE INDEX answer_option_option_uindex ON public.answer_option USING btree (option);
 
 
 --
@@ -366,6 +1450,13 @@ CREATE UNIQUE INDEX document_type_id_uindex ON public.document_type USING btree 
 
 
 --
+-- Name: question_type_type_uindex; Type: INDEX; Schema: public; Owner: developer
+--
+
+CREATE UNIQUE INDEX question_type_type_uindex ON public.question_type USING btree (type);
+
+
+--
 -- Name: user_email_uindex; Type: INDEX; Schema: public; Owner: developer
 --
 
@@ -373,11 +1464,120 @@ CREATE UNIQUE INDEX user_email_uindex ON public."user" USING btree (email);
 
 
 --
--- Name: municipality municipality_department_code_fk; Type: FK CONSTRAINT; Schema: public; Owner: developer
+-- Name: user log_user; Type: TRIGGER; Schema: public; Owner: developer
+--
+
+CREATE TRIGGER log_user AFTER INSERT OR DELETE OR UPDATE ON public."user" FOR EACH ROW EXECUTE FUNCTION public.process_user_audit();
+
+
+--
+-- Name: user_answer log_user_answer; Type: TRIGGER; Schema: public; Owner: developer
+--
+
+CREATE TRIGGER log_user_answer AFTER INSERT OR DELETE OR UPDATE ON public.user_answer FOR EACH ROW EXECUTE FUNCTION public.process_user_answer_audit();
+
+
+--
+-- Name: user new_user; Type: TRIGGER; Schema: public; Owner: developer
+--
+
+CREATE TRIGGER new_user AFTER INSERT ON public."user" FOR EACH ROW EXECUTE FUNCTION public.cypher_new_user_pass();
+
+
+--
+-- Name: answer_options answer_options_answer_option_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: developer
+--
+
+ALTER TABLE ONLY public.answer_options
+    ADD CONSTRAINT answer_options_answer_option_id_fk FOREIGN KEY (answer_option) REFERENCES public.answer_option(id);
+
+
+--
+-- Name: department department_country_code_fk; Type: FK CONSTRAINT; Schema: public; Owner: developer
+--
+
+ALTER TABLE ONLY public.department
+    ADD CONSTRAINT department_country_code_fk FOREIGN KEY (country_code) REFERENCES public.country(iso_code);
+
+
+--
+-- Name: log_user_answer log_user_answer_user_email_document_document_type_fk; Type: FK CONSTRAINT; Schema: public; Owner: developer
+--
+
+ALTER TABLE ONLY public.log_user_answer
+    ADD CONSTRAINT log_user_answer_user_email_document_document_type_fk FOREIGN KEY (email, document, document_type) REFERENCES public."user"(email, document, document_type);
+
+
+--
+-- Name: log_user log_user_institution_type_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: developer
+--
+
+ALTER TABLE ONLY public.log_user
+    ADD CONSTRAINT log_user_institution_type_id_fk FOREIGN KEY (institution_type) REFERENCES public.institution_type(id);
+
+
+--
+-- Name: log_user log_user_municipality_code_country_code_department_code_fk; Type: FK CONSTRAINT; Schema: public; Owner: developer
+--
+
+ALTER TABLE ONLY public.log_user
+    ADD CONSTRAINT log_user_municipality_code_country_code_department_code_fk FOREIGN KEY (municipality_code, country_code, department_code) REFERENCES public.municipality(code, country_code, department_code);
+
+
+--
+-- Name: log_user log_user_study_level_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: developer
+--
+
+ALTER TABLE ONLY public.log_user
+    ADD CONSTRAINT log_user_study_level_id_fk FOREIGN KEY (study_level) REFERENCES public.study_level(id);
+
+
+--
+-- Name: municipality municipality_department_code_country_code_fk; Type: FK CONSTRAINT; Schema: public; Owner: developer
 --
 
 ALTER TABLE ONLY public.municipality
-    ADD CONSTRAINT municipality_department_code_fk FOREIGN KEY (department_code) REFERENCES public.department(code);
+    ADD CONSTRAINT municipality_department_code_country_code_fk FOREIGN KEY (department_code, country_code) REFERENCES public.department(code, country_code);
+
+
+--
+-- Name: question question_question_type_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: developer
+--
+
+ALTER TABLE ONLY public.question
+    ADD CONSTRAINT question_question_type_id_fk FOREIGN KEY (question_type) REFERENCES public.question_type(id);
+
+
+--
+-- Name: survey_question survey_question_question_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: developer
+--
+
+ALTER TABLE ONLY public.survey_question
+    ADD CONSTRAINT survey_question_question_id_fk FOREIGN KEY (question_id) REFERENCES public.question(id);
+
+
+--
+-- Name: survey_question survey_question_survey_info_code_fk; Type: FK CONSTRAINT; Schema: public; Owner: developer
+--
+
+ALTER TABLE ONLY public.survey_question
+    ADD CONSTRAINT survey_question_survey_info_code_fk FOREIGN KEY (survey_id) REFERENCES public.survey(id);
+
+
+--
+-- Name: user_answer user_answer_survey_question_question_id_survey_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: developer
+--
+
+ALTER TABLE ONLY public.user_answer
+    ADD CONSTRAINT user_answer_survey_question_question_id_survey_id_fk FOREIGN KEY (question, survey) REFERENCES public.survey_question(question_id, survey_id);
+
+
+--
+-- Name: user_answer user_answer_user_document_type_document_email_fk; Type: FK CONSTRAINT; Schema: public; Owner: developer
+--
+
+ALTER TABLE ONLY public.user_answer
+    ADD CONSTRAINT user_answer_user_document_type_document_email_fk FOREIGN KEY (document_type, document, email) REFERENCES public."user"(document_type, document, email);
 
 
 --
@@ -397,11 +1597,11 @@ ALTER TABLE ONLY public."user"
 
 
 --
--- Name: user user_municipality_code_department_code_fk; Type: FK CONSTRAINT; Schema: public; Owner: developer
+-- Name: user user_municipality_code_country_code_department_code_fk; Type: FK CONSTRAINT; Schema: public; Owner: developer
 --
 
 ALTER TABLE ONLY public."user"
-    ADD CONSTRAINT user_municipality_code_department_code_fk FOREIGN KEY (municipality_code, department_code) REFERENCES public.municipality(code, department_code);
+    ADD CONSTRAINT user_municipality_code_country_code_department_code_fk FOREIGN KEY (municipality_code, country_code, department_code) REFERENCES public.municipality(code, country_code, department_code);
 
 
 --

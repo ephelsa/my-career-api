@@ -9,12 +9,12 @@ import (
 )
 
 type handler struct {
-	Local data.DocumentTypeLocalRepository
+	Repository data.DocumentTypeRepository
 }
 
-func NewDocumentTypeServer(remote *fiber.App, repo data.DocumentTypeLocalRepository) {
+func NewDocumentTypeServer(remote *fiber.App, repo data.DocumentTypeRepository) {
 	handler := &handler{
-		Local: repo,
+		Repository: repo,
 	}
 
 	dt := remote.Group("/document-type")
@@ -23,7 +23,7 @@ func NewDocumentTypeServer(remote *fiber.App, repo data.DocumentTypeLocalReposit
 }
 
 func (h *handler) FetchAll(c *fiber.Ctx) error {
-	result, err := h.Local.FetchAll(c.Context())
+	result, err := h.Repository.FetchAll(c.Context())
 	if err != nil {
 		return c.Status(http.StatusInternalServerError).JSON(sharedDomain.ErrorResponse(sharedDomain.Error{
 			Message: "An error occurs fetching all document types",
@@ -36,7 +36,7 @@ func (h *handler) FetchAll(c *fiber.Ctx) error {
 
 func (h *handler) FetchByID(c *fiber.Ctx) error {
 	id := c.Params("id")
-	result, err := h.Local.FetchByID(c.Context(), id)
+	result, err := h.Repository.FetchByID(c.Context(), id)
 	if err != nil {
 		return c.Status(http.StatusInternalServerError).JSON(sharedDomain.ErrorResponse(sharedDomain.Error{
 			Message: fmt.Sprintf("An error occurs fetching by %s", id),

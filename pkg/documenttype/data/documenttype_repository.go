@@ -5,7 +5,7 @@ import (
 	"ephelsa/my-career/pkg/documenttype/domain"
 )
 
-type DocumentTypeLocalRepository interface {
+type DocumentTypeRepository interface {
 	// FetchAll fetch all domain.DocumentType
 	FetchAll(c context.Context) ([]domain.DocumentType, error)
 	// FetchByID fetch a domain.DocumentType searching by an id

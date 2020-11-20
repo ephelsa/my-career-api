@@ -13,7 +13,7 @@ type postgresDocumentTypeRepo struct {
 	Connection *sql.DB
 }
 
-func NewPostgresDocumentTypeRepository(db *sql.DB) data.DocumentTypeLocalRepository {
+func NewPostgresDocumentTypeRepository(db *sql.DB) data.DocumentTypeRepository {
 	return &postgresDocumentTypeRepo{
 		Connection: db,
 	}

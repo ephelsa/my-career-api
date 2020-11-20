@@ -1,43 +1,18 @@
 package database
 
 import (
+	"context"
 	"database/sql"
-	"ephelsa/my-career/internal/env"
-	"log"
-	"sync"
+	"github.com/sirupsen/logrus"
 )
 
-type Information struct {
-	Postgres *sql.DB
-}
-
-// NewPostgresDatabase create a new instance of Information setting Postgres
-func NewPostgresDatabase(db env.Database) *Information {
-	var (
-		once sync.Once
-		data *Information
-	)
-
-	once.Do(func() {
-		db, err := postgresConnection(db)
-		if err != nil {
-			log.Panic(err)
-		}
-		if err := db.Ping(); err != nil {
-			log.Panic(err)
-		}
-
-		data = &Information{
-			Postgres: db,
-		}
-	})
-
-	return data
-}
-
-// ClosePostgres ends the database connection
-func (d *Information) ClosePostgres() {
-	if err := d.Postgres.Close(); err != nil {
-		log.Panic(err)
+// NewRowsByQueryContext provide sql.Rows and handle errors
+func NewRowsByQueryContext(db *sql.DB, c context.Context, query string, args ...interface{}) (rows *sql.Rows, err error) {
+	rows, err = db.QueryContext(c, query, args...)
+	if err != nil {
+		logrus.Error(err)
+		return nil, err
 	}
+
+	return rows, err
 }

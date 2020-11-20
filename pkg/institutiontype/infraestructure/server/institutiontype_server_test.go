@@ -63,24 +63,23 @@ func TestHandler_FetchAll(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		req, _ := http.NewRequest(test.httpMethod, test.route, nil)
-		app := server.NewServer().Server
-		NewInstitutionTypeServer(app, test.repository)
-		res, err := app.Test(req, -1)
+		t.Run(test.description, func(t *testing.T) {
+			req, _ := http.NewRequest(test.httpMethod, test.route, nil)
+			app := server.NewServer().Server
+			NewInstitutionTypeServer(app, test.repository)
+			res, err := app.Test(req, -1)
 
-		assert.Equalf(t, test.expectedError, err != nil, test.description)
-		if test.expectedError {
-			continue
-		}
+			assert.Equalf(t, test.expectedError, err != nil, test.description)
 
-		//goland:noinspection GoNilness
-		assert.Equalf(t, test.expectedCode, res.StatusCode, test.description)
+			//goland:noinspection GoNilness
+			assert.Equalf(t, test.expectedCode, res.StatusCode, test.description)
 
-		//goland:noinspection GoNilness
-		body, err := ioutil.ReadAll(res.Body)
-		expBody, _ := json.Marshal(test.expectedBody)
+			//goland:noinspection GoNilness
+			body, err := ioutil.ReadAll(res.Body)
+			expBody, _ := json.Marshal(test.expectedBody)
 
-		assert.Nilf(t, err, test.description)
-		assert.Equalf(t, string(expBody), string(body), test.description)
+			assert.Nilf(t, err, test.description)
+			assert.Equalf(t, string(expBody), string(body), test.description)
+		})
 	}
 }

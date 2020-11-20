@@ -10,7 +10,7 @@ import (
 func main() {
 	envConfig := env.Setup()
 	api := sharedServer.NewServer()
-	db := sharedDatabase.NewPostgresDatabase(envConfig.Database) //nolint:staticcheck
+	db := sharedDatabase.NewPostgresDatabase(envConfig.Database)
 
 	api.Middleware()
 	sharedData.AddServerRouter(api, db.Postgres)

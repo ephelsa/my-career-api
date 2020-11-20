@@ -2,6 +2,7 @@ package database
 
 import (
 	"context"
+	sharedDomain "ephelsa/my-career/pkg/shared/domain"
 	"ephelsa/my-career/pkg/studylevel/domain"
 	"ephelsa/my-career/test/database"
 	"github.com/DATA-DOG/go-sqlmock"
@@ -21,38 +22,51 @@ var sts = []domain.StudyLevel{
 }
 
 func TestPostgresStudyLevelRepo_FetchAll(t *testing.T) {
-	db, mock := database.NewMockDatabase(t)
-	repo := postgresStudyLevelRepo{
-		Connection: db,
+	tests := []struct {
+		description string
+
+		mockQuery string
+		mockRows  *sqlmock.Rows
+
+		expectedError     bool
+		expectedErrorType error
+		expectedLenResult int
+	}{
+		{
+			description:       "fetch all",
+			mockQuery:         "SELECT id, value FROM study_level",
+			mockRows:          sqlmock.NewRows([]string{"id", "value"}).AddRow(sts[0].Id, sts[0].Name).AddRow(sts[1].Id, sts[1].Name),
+			expectedError:     false,
+			expectedLenResult: 2,
+		},
+		{
+			description:       "fetch all with empty resource error",
+			mockQuery:         "SELECT id, value FROM study_level",
+			mockRows:          sqlmock.NewRows([]string{"id", "value"}),
+			expectedError:     true,
+			expectedErrorType: sharedDomain.ResourcesEmpty,
+			expectedLenResult: 0,
+		},
 	}
-	defer func() {
-		_ = db.Close()
-	}()
 
-	query := `SELECT id, value FROM study_level`
-	rows := sqlmock.NewRows([]string{"id", "value"}).AddRow(sts[0].Id, sts[0].Name).AddRow(sts[1].Id, sts[1].Name)
-	mock.ExpectQuery(query).WillReturnRows(rows)
+	for _, test := range tests {
+		t.Run(test.description, func(t *testing.T) {
+			db, mock := database.NewMockDatabase(t)
+			repo := postgresStudyLevelRepo{
+				Connection: db,
+			}
+			defer func() {
+				_ = db.Close()
+			}()
 
-	result, err := repo.FetchAll(context.Background())
-	assert.NotEmpty(t, result)
-	assert.NoError(t, err)
-	assert.Len(t, result, len(sts))
-}
+			mock.ExpectQuery(test.mockQuery).WillReturnRows(test.mockRows)
 
-func TestPostgresStudyLevelRepo_FetchAll_Error(t *testing.T) {
-	db, mock := database.NewMockDatabase(t)
-	repo := postgresStudyLevelRepo{
-		Connection: db,
+			result, err := repo.FetchAll(context.Background())
+			assert.Equalf(t, test.expectedLenResult, len(result), test.description)
+			assert.Equalf(t, test.expectedError, err != nil, test.description)
+			if test.expectedError {
+				assert.Equalf(t, test.expectedErrorType, err, test.description)
+			}
+		})
 	}
-	defer func() {
-		_ = db.Close()
-	}()
-
-	query := `SELECT id, value FROM study_level`
-	rows := sqlmock.NewRows([]string{"id", "value"})
-	mock.ExpectQuery(query).WillReturnRows(rows)
-
-	result, err := repo.FetchAll(context.Background())
-	assert.Empty(t, result)
-	assert.Error(t, err)
 }

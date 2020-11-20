@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	sharedDomain "ephelsa/my-career/pkg/shared/domain"
+	"ephelsa/my-career/pkg/shared/infrastructure/database"
 	"ephelsa/my-career/pkg/studylevel/data"
 	"ephelsa/my-career/pkg/studylevel/domain"
 	"github.com/sirupsen/logrus"
@@ -20,11 +21,7 @@ func NewPostgresStudyLevelRepository(db *sql.DB) data.StudyLevelRepository {
 }
 
 func (p *postgresStudyLevelRepo) fetch(c context.Context, query string, args ...interface{}) (result []domain.StudyLevel, err error) {
-	rows, err := p.Connection.QueryContext(c, query, args...)
-	if err != nil {
-		logrus.Error(err)
-		return nil, err
-	}
+	rows, err := database.NewRowsByQueryContext(p.Connection, c, query, args...)
 	defer func() {
 		err = rows.Close()
 		if err != nil {

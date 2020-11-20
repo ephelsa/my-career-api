@@ -6,6 +6,7 @@ import (
 	"ephelsa/my-career/pkg/documenttype/data"
 	"ephelsa/my-career/pkg/documenttype/domain"
 	sharedDomain "ephelsa/my-career/pkg/shared/domain"
+	"ephelsa/my-career/pkg/shared/infrastructure/database"
 	"github.com/sirupsen/logrus"
 )
 
@@ -20,9 +21,8 @@ func NewPostgresDocumentTypeRepository(db *sql.DB) data.DocumentTypeRepository {
 }
 
 func (p *postgresDocumentTypeRepo) fetch(c context.Context, query string, args ...interface{}) (result []domain.DocumentType, err error) {
-	rows, err := p.Connection.QueryContext(c, query, args...)
+	rows, err := database.NewRowsByQueryContext(p.Connection, c, query, args...)
 	if err != nil {
-		logrus.Error(err)
 		return nil, err
 	}
 	defer func() {

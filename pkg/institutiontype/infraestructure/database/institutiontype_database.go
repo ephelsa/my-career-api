@@ -6,6 +6,7 @@ import (
 	"ephelsa/my-career/pkg/institutiontype/data"
 	"ephelsa/my-career/pkg/institutiontype/domain"
 	sharedDomain "ephelsa/my-career/pkg/shared/domain"
+	sharedDatabase "ephelsa/my-career/pkg/shared/infrastructure/database"
 	"github.com/sirupsen/logrus"
 )
 
@@ -20,9 +21,8 @@ func NewPostgresInstitutionTypeRepository(db *sql.DB) data.InstitutionTypeReposi
 }
 
 func (p *postgresInstitutionTypeRepo) fetch(c context.Context, query string, args ...interface{}) (result []domain.InstitutionType, err error) {
-	rows, err := p.Connection.QueryContext(c, query, args...)
+	rows, err := sharedDatabase.NewRowsByQueryContext(p.Connection, c, query, args...)
 	if err != nil {
-		logrus.Error(err)
 		return nil, err
 	}
 	defer func() {

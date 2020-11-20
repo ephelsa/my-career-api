@@ -2,18 +2,20 @@ package main
 
 import (
 	"ephelsa/my-career/internal/env"
-	"ephelsa/my-career/pkg/infraestructure/database"
-	"ephelsa/my-career/pkg/infraestructure/server"
+	sharedData "ephelsa/my-career/pkg/shared/data"
+	sharedDatabase "ephelsa/my-career/pkg/shared/infrastructure/database"
+	sharedServer "ephelsa/my-career/pkg/shared/infrastructure/server"
 )
 
 func main() {
 	envConfig := env.Setup()
-	db := database.New(envConfig.Database) //nolint:staticcheck
-	api := server.New(db)
+	api := sharedServer.NewServer()
+	db := sharedDatabase.NewPostgresDatabase(envConfig.Database) //nolint:staticcheck
 
 	api.Middleware()
-	api.Router()
+	sharedData.AddServerRouter(api, db.Postgres)
+
 	api.Start(envConfig.Server.Port)
 	api.Close()
-	db.Close()
+	db.ClosePostgres()
 }

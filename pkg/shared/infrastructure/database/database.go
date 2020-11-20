@@ -8,10 +8,11 @@ import (
 )
 
 type Information struct {
-	Instance *sql.DB
+	Postgres *sql.DB
 }
 
-func New(db env.Database) *Information {
+// NewPostgresDatabase create a new instance of Information setting Postgres
+func NewPostgresDatabase(db env.Database) *Information {
 	var (
 		once sync.Once
 		data *Information
@@ -27,15 +28,16 @@ func New(db env.Database) *Information {
 		}
 
 		data = &Information{
-			Instance: db,
+			Postgres: db,
 		}
 	})
 
 	return data
 }
 
-func (d *Information) Close() {
-	if err := d.Instance.Close(); err != nil {
+// ClosePostgres ends the database connection
+func (d *Information) ClosePostgres() {
+	if err := d.Postgres.Close(); err != nil {
 		log.Panic(err)
 	}
 }

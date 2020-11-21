@@ -15,6 +15,9 @@ import (
 
 	locationDatabase "ephelsa/my-career/pkg/location/infraestructure/database"
 	locationServer "ephelsa/my-career/pkg/location/infraestructure/server"
+
+	authDatabase "ephelsa/my-career/pkg/auth/infraestructure/database"
+	authServer "ephelsa/my-career/pkg/auth/infraestructure/server"
 )
 
 func ServerRouter(s *sharedServer.Server, db *sql.DB) {
@@ -22,4 +25,5 @@ func ServerRouter(s *sharedServer.Server, db *sql.DB) {
 	studyLevelServer.NewStudyLevelServer(s.Server, studyLevelDatabase.NewPostgresStudyLevelRepository(db))
 	institutionTypeServer.NewInstitutionTypeServer(s.Server, institutionTypeDatabase.NewPostgresInstitutionTypeRepository(db))
 	locationServer.NewLocationServer(s.Server, locationDatabase.NewPostgresLocationRepository(db))
+	authServer.NewAuthServer(s.Server, authDatabase.NewPostgresAuthDatabase(db))
 }

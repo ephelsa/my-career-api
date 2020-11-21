@@ -13,7 +13,7 @@ func main() {
 	db := sharedDatabase.NewPostgresDatabase(envConfig.Database)
 
 	api.Middleware()
-	sharedData.AddServerRouter(api, db.Postgres)
+	sharedData.ServerRouter(api, db.Postgres)
 
 	api.Start(envConfig.Server.Port)
 	api.Close()

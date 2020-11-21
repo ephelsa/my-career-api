@@ -2,12 +2,12 @@ package server
 
 import (
 	"encoding/json"
-	"ephelsa/my-career/pkg/documenttype/data"
 	"ephelsa/my-career/pkg/documenttype/domain"
 	sharedDomain "ephelsa/my-career/pkg/shared/domain"
 	"ephelsa/my-career/pkg/shared/infrastructure/server"
-	"ephelsa/my-career/test/database/mock"
+	testMock "ephelsa/my-career/test/database/mock"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"io/ioutil"
 	"net/http"
 	"testing"
@@ -20,16 +20,14 @@ func TestHandler_FetchAll(t *testing.T) {
 		httpMethod string
 		route      string
 
-		repository data.DocumentTypeRepository
-
 		expectedCode  int
 		expectedBody  sharedDomain.Response
-		expectedError bool
+		expectedError error
 	}{
 		{
 			description:  "fetch all document types",
 			route:        "/document-type/",
-			httpMethod:   "GET",
+			httpMethod:   http.MethodGet,
 			expectedCode: http.StatusOK,
 			expectedBody: sharedDomain.SuccessResponse([]domain.DocumentType{
 				{
@@ -45,8 +43,7 @@ func TestHandler_FetchAll(t *testing.T) {
 					Name: "Third",
 				},
 			}),
-			expectedError: false,
-			repository:    mock.FakeDocumentTypeFullData(),
+			expectedError: nil,
 		},
 		{
 			description:  "fetch all document types with error",
@@ -57,28 +54,30 @@ func TestHandler_FetchAll(t *testing.T) {
 				Message: "An error occurs fetching all document types",
 				Details: sharedDomain.ResourcesEmpty.Error(),
 			}),
-			expectedError: false,
-			repository:    mock.FakeDocumentTypeErrorData(),
+			expectedError: sharedDomain.ResourcesEmpty,
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.description, func(t *testing.T) {
-			req, _ := http.NewRequest(test.httpMethod, test.route, nil)
+			req, err := http.NewRequest(test.httpMethod, test.route, nil)
+			assert.NoErrorf(t, err, test.description)
+
+			mockRepo := testMock.NewDocumentTypeRepositoryMock()
+			mockRepo.On("FetchAll", mock.Anything).Return(test.expectedBody.Result, test.expectedError)
+
 			app := server.NewServer().Server
-			NewDocumentTypeServer(app, test.repository)
+			NewDocumentTypeServer(app, mockRepo)
 			res, err := app.Test(req, -1)
-
-			assert.Equalf(t, test.expectedError, err != nil, test.description)
-
-			//goland:noinspection GoNilness
+			assert.NoErrorf(t, err, test.description)
 			assert.Equalf(t, test.expectedCode, res.StatusCode, test.description)
 
-			//goland:noinspection GoNilness
 			body, err := ioutil.ReadAll(res.Body)
-			expBody, _ := json.Marshal(test.expectedBody)
+			assert.NoErrorf(t, err, test.description)
 
-			assert.Nilf(t, err, test.description)
+			expBody, err := json.Marshal(test.expectedBody)
+			assert.NoErrorf(t, err, test.description)
+
 			assert.Equalf(t, string(expBody), string(body), test.description)
 		})
 	}
@@ -91,55 +90,57 @@ func TestHandler_FetchByID(t *testing.T) {
 		httpMethod string
 		route      string
 
-		repository data.DocumentTypeRepository
+		idArg string
 
 		expectedCode  int
 		expectedBody  sharedDomain.Response
-		expectedError bool
+		expectedError error
 	}{
 		{
 			description:  "fetch data with id something",
 			httpMethod:   "GET",
 			route:        "/document-type/something",
-			repository:   mock.FakeDocumentTypeFullData(),
+			idArg:        "something",
 			expectedCode: http.StatusOK,
 			expectedBody: sharedDomain.SuccessResponse(domain.DocumentType{
 				Id:   "something",
 				Name: "Data",
 			}),
-			expectedError: false,
+			expectedError: nil,
 		},
 		{
 			description:  "fetch data with id something an get an error",
 			httpMethod:   "GET",
 			route:        "/document-type/something",
-			repository:   mock.FakeDocumentTypeErrorData(),
+			idArg:        "something",
 			expectedCode: http.StatusInternalServerError,
 			expectedBody: sharedDomain.ErrorResponse(sharedDomain.Error{
 				Message: "An error occurs fetching by something",
-				Details: "something wrong retrieving data with id something",
+				Details: sharedDomain.ResourcesEmpty.Error(),
 			}),
-			expectedError: false,
+			expectedError: sharedDomain.ResourcesEmpty,
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.description, func(t *testing.T) {
-			req, _ := http.NewRequest(test.httpMethod, test.route, nil)
+			req, err := http.NewRequest(test.httpMethod, test.route, nil)
+			assert.NoErrorf(t, err, test.description)
+
+			mockRepo := testMock.NewDocumentTypeRepositoryMock()
+			mockRepo.On("FetchByID", mock.Anything, test.idArg).Return(test.expectedBody.Result, test.expectedError)
+
 			app := server.NewServer().Server
-			NewDocumentTypeServer(app, test.repository)
+			NewDocumentTypeServer(app, mockRepo)
 			res, err := app.Test(req, -1)
-
-			assert.Equalf(t, test.expectedError, err != nil, test.description)
-
-			//goland:noinspection GoNilness
+			assert.NoErrorf(t, err, test.description)
 			assert.Equalf(t, test.expectedCode, res.StatusCode, test.description)
 
-			//goland:noinspection GoNilness
 			body, err := ioutil.ReadAll(res.Body)
-			expBody, _ := json.Marshal(test.expectedBody)
+			assert.NoErrorf(t, err, test.description)
 
-			assert.Nilf(t, err, test.description)
+			expBody, err := json.Marshal(test.expectedBody)
+			assert.NoErrorf(t, err, test.description)
 			assert.Equalf(t, string(expBody), string(body), test.description)
 		})
 	}

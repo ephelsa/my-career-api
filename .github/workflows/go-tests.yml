@@ -15,7 +15,16 @@ jobs:
 
       - name: Generate coverage report
         run: |
-          go test `go list ./... | grep -v test` -coverprofile=coverage.txt -covermode=atomic
+          set -e
+          echo "" > coverage.txt
+
+          for d in $(go list ./... | grep -v vendor); do
+              go test -race -coverprofile=profile.out -covermode=atomic $d
+              if [ -f profile.out ]; then
+                  cat profile.out >> coverage.txt
+                  rm profile.out
+              fi
+          done
 
       - name: Uplocad coverage report
         uses: codecov/codecov-action@master

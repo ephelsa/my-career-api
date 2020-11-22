@@ -74,19 +74,19 @@ func (a *authRepositoryMock) Register(c context.Context, r domain.Register) (res
 	return
 }
 
-func (a *authRepositoryMock) Login(c context.Context, email string, password string) (res domain.LoginSuccess, err error) {
-	ret := a.Called(c, email, password)
+func (a *authRepositoryMock) IsAuthSuccess(c context.Context, auth domain.AuthCredentials) (res bool, err error) {
+	ret := a.Called(c, auth)
 
-	if rf, ok := ret.Get(0).(func(context.Context, string, string) domain.LoginSuccess); ok {
-		res = rf(c, email, password)
+	if rf, ok := ret.Get(0).(func(context.Context, domain.AuthCredentials) bool); ok {
+		res = rf(c, auth)
 	} else {
 		if ret.Get(0) != nil {
-			res = ret.Get(0).(domain.LoginSuccess)
+			res = ret.Get(0).(bool)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
-		err = rf(c, email, password)
+	if rf, ok := ret.Get(1).(func(context.Context, domain.AuthCredentials) error); ok {
+		err = rf(c, auth)
 	} else {
 		err = ret.Error(1)
 	}

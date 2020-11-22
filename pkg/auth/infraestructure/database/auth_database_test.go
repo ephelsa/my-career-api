@@ -16,6 +16,7 @@ type checkUser struct {
 	mockRows  *sqlmock.Rows
 
 	emailArg string
+	passArg  string
 
 	expectedResult bool
 }
@@ -150,4 +151,43 @@ func TestPostgresAuthRepo_Register(t *testing.T) {
 	result, err := repo.Register(context.Background(), r)
 	assert.NoError(t, err)
 	assert.Equal(t, expectedResult, result)
+}
+
+func TestPostgresAuthRepo_IsAuthSuccess(t *testing.T) {
+	tests := []checkUser{
+		{
+			description:    "success",
+			mockQuery:      "SELECT authenticate_user\\(\\$1, \\$2\\)",
+			mockRows:       sqlmock.NewRows([]string{"authenticate_user"}).AddRow(true),
+			emailArg:       "xephelsax@gmail.com",
+			passArg:        "123123",
+			expectedResult: true,
+		},
+		{
+			description:    "fail",
+			mockQuery:      "SELECT authenticate_user\\(\\$1, \\$2\\)",
+			mockRows:       sqlmock.NewRows([]string{"authenticate_user"}).AddRow(false),
+			emailArg:       "xephelsax@gmail.com",
+			passArg:        "123123",
+			expectedResult: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.description, func(t *testing.T) {
+			db, mock := testDatabase.NewMockDatabase(t)
+			repo := postgresAuthRepo{
+				Connection: db,
+			}
+			defer func() {
+				_ = repo.Connection.Close()
+			}()
+
+			mock.ExpectQuery(tt.mockQuery).WithArgs(tt.emailArg, tt.passArg).WillReturnRows(tt.mockRows)
+
+			result, err := repo.IsAuthSuccess(context.Background(), domain.AuthCredentials{Email: tt.emailArg, Password: tt.passArg})
+			assert.NoErrorf(t, err, tt.description)
+			assert.Equalf(t, tt.expectedResult, result, tt.description)
+		})
+	}
 }

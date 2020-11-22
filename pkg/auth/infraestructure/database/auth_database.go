@@ -107,9 +107,9 @@ func (p *postgresAuthRepo) Register(c context.Context, r domain.Register) (res d
 }
 
 // TODO: Implement
-func (p *postgresAuthRepo) Login(c context.Context, email string, password string) (res domain.LoginSuccess, err error) {
-	query := `SELECT authenticate_user($1)`
-	row, err := database.NewRowsByQueryContext(p.Connection, c, query, email, password)
+func (p *postgresAuthRepo) IsAuthSuccess(c context.Context, auth domain.AuthCredentials) (res bool, err error) {
+	query := `SELECT authenticate_user($1, $2)`
+	row, err := database.NewRowsByQueryContext(p.Connection, c, query, auth.Email, auth.Password)
 	if err != nil {
 		logrus.Error(err)
 		return res, err
@@ -120,45 +120,12 @@ func (p *postgresAuthRepo) Login(c context.Context, email string, password strin
 		}
 	}()
 
-	isAuth := false
-	if err = row.Scan(&isAuth); err != nil {
-		logrus.Error(err)
-		return res, err
-	}
-
-	if isAuth {
-		res, err = p.storeToken(c, email)
-	} else {
-		err = data.InvalidAuth(email)
+	if row.Next() {
+		if err = row.Scan(&res); err != nil {
+			logrus.Error(err)
+			return res, err
+		}
 	}
 
 	return
-}
-
-// TODO: JWT implementation. Probably this method will be erased
-func (p *postgresAuthRepo) storeToken(c context.Context, email string) (res domain.LoginSuccess, err error) {
-	loginSuccess := domain.LoginSuccess{Token: "something"} // This is hardcoded meanwhile fixe jwt generation and parsing
-	query := `INSERT INTO session (email, document_type, document, token)
-			SELECT email, document_type, document, $1
-			FROM "user"
-			WHERE email = $2`
-	stmt, err := p.Connection.PrepareContext(c, query)
-	if err != nil {
-		logrus.Error(err)
-		return
-	}
-	defer func() {
-		err = stmt.Close()
-		if err != nil {
-			logrus.Error(err)
-		}
-	}()
-
-	_, err = stmt.ExecContext(c, loginSuccess.Token, email)
-	if err != nil {
-		logrus.Error(err)
-		return
-	}
-
-	return loginSuccess, nil
 }

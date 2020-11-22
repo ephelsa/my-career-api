@@ -14,6 +14,7 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"strings"
 	"testing"
 )
 
@@ -57,7 +58,7 @@ func TestHandler_Registry(t *testing.T) {
 			expectedStatus:  http.StatusNotAcceptable,
 			expectedResponse: sharedDomain.ErrorResponse(sharedDomain.Error{
 				Message: data.UserIsRegistered,
-				Details: data.UserRegisteredWithoutConfirm("xephelsax@gmail.com").Error(),
+				Details: data.UserRegisteredWithoutConfirmError("xephelsax@gmail.com").Error(),
 			}),
 			expUserRegisteredRepo: expectedAuthRepo{
 				Result: true,
@@ -75,7 +76,7 @@ func TestHandler_Registry(t *testing.T) {
 			expectedStatus:  http.StatusNotAcceptable,
 			expectedResponse: sharedDomain.ErrorResponse(sharedDomain.Error{
 				Message: data.UserIsRegistered,
-				Details: data.UserRegistered("xephelsax@gmail.com").Error(),
+				Details: data.UserRegisteredError("xephelsax@gmail.com").Error(),
 			}),
 			expUserRegisteredRepo: expectedAuthRepo{
 				Result: true,
@@ -93,7 +94,7 @@ func TestHandler_Registry(t *testing.T) {
 			expectedStatus:  http.StatusLengthRequired,
 			expectedResponse: sharedDomain.ErrorResponse(sharedDomain.Error{
 				Message: data.PasswordLength,
-				Details: data.PasswordWithoutMinLen(domain.PasswordMinLen).Error(),
+				Details: data.PasswordWithoutMinLenError(domain.PasswordMinLen).Error(),
 			}),
 			expUserRegisteredRepo: expectedAuthRepo{
 				Result: false,
@@ -129,6 +130,144 @@ func TestHandler_Registry(t *testing.T) {
 			mockRepo.On("IsUserRegistered", mock.Anything, tt.emailArg).Return(tt.expUserRegisteredRepo.Result, tt.expUserRegisteredRepo.Error)
 			mockRepo.On("IsUserRegistryConfirmed", mock.Anything, tt.emailArg).Return(tt.expUserRegistryConfirmedRepo.Result, tt.expUserRegistryConfirmedRepo.Error)
 			mockRepo.On("Register", mock.Anything, reg).Return(tt.expRegister.Result, tt.expRegister.Error)
+
+			app := server.NewServer().Server
+			NewAuthServer(app, mockRepo)
+			res, err := app.Test(req, -1)
+			assert.NoErrorf(t, err, tt.description)
+			assert.Equalf(t, tt.expectedStatus, res.StatusCode, tt.description)
+
+			body, err := ioutil.ReadAll(res.Body)
+			assert.NoErrorf(t, err, tt.description)
+
+			expBody, err := json.Marshal(tt.expectedResponse)
+			assert.NoErrorf(t, err, tt.description)
+
+			assert.Equalf(t, string(expBody), string(body), tt.description)
+		})
+	}
+}
+
+func TestHandler_IsAuthSuccess(t *testing.T) {
+	tests := []struct {
+		description string
+
+		route string
+		body  string
+
+		expectedStatus   int
+		expectedResponse sharedDomain.Response
+
+		expIsUserRegisteredRepo        expectedAuthRepo
+		expIsUserRegistryConfirmedRepo expectedAuthRepo
+		expIsAuthSuccess               expectedAuthRepo
+	}{
+		{
+			description: "doesn't exists",
+			route:       "/auth/login",
+			body: `{ 
+						"email": "xephelsax@gmail.com", 
+						"password": "SuperSecretPassword" 
+					}`,
+			expectedStatus: http.StatusUnauthorized,
+			expectedResponse: sharedDomain.ErrorResponse(sharedDomain.Error{
+				Message: data.UserNotRegistered,
+				Details: data.UserNotRegisteredError("xephelsax@gmail.com").Error(),
+			}),
+			expIsUserRegisteredRepo: expectedAuthRepo{
+				Result: false,
+				Error:  nil,
+			},
+			expIsUserRegistryConfirmedRepo: expectedAuthRepo{},
+			expIsAuthSuccess:               expectedAuthRepo{},
+		},
+		{
+			description: "exists without confirm",
+			route:       "/auth/login",
+			body: `{ 
+						"email": "xephelsax@gmail.com", 
+						"password": "SuperSecretPassword" 
+					}`,
+			expectedStatus: http.StatusNotAcceptable,
+			expectedResponse: sharedDomain.ErrorResponse(sharedDomain.Error{
+				Message: data.ConfirmEmail,
+				Details: data.UserRegisteredWithoutConfirmError("xephelsax@gmail.com").Error(),
+			}),
+			expIsUserRegisteredRepo: expectedAuthRepo{
+				Result: true,
+				Error:  nil,
+			},
+			expIsUserRegistryConfirmedRepo: expectedAuthRepo{
+				Result: false,
+				Error:  nil,
+			},
+			expIsAuthSuccess: expectedAuthRepo{},
+		},
+		{
+			description: "invalid credentials",
+			route:       "/auth/login",
+			body: `{ 
+						"email": "xephelsax@gmail.com", 
+						"password": "SuperSecretPassword" 
+					}`,
+			expectedStatus: http.StatusUnauthorized,
+			expectedResponse: sharedDomain.ErrorResponse(sharedDomain.Error{
+				Message: data.InvalidCredentials,
+				Details: data.InvalidAuthError("xephelsax@gmail.com").Error(),
+			}),
+			expIsUserRegisteredRepo: expectedAuthRepo{
+				Result: true,
+				Error:  nil,
+			},
+			expIsUserRegistryConfirmedRepo: expectedAuthRepo{
+				Result: true,
+				Error:  nil,
+			},
+			expIsAuthSuccess: expectedAuthRepo{
+				Result: false,
+				Error:  nil,
+			},
+		},
+		{
+			description: "auth success",
+			route:       "/auth/login",
+			body: `{ 
+						"email": "xephelsax@gmail.com", 
+						"password": "SuperSecretPassword" 
+					}`,
+			expectedStatus: http.StatusOK,
+			expectedResponse: sharedDomain.SuccessResponse(domain.AuthCredentials{
+				Email: "xephelsax@gmail.com",
+				Token: "an incredible token will be placed here",
+			}),
+			expIsUserRegisteredRepo: expectedAuthRepo{
+				Result: true,
+				Error:  nil,
+			},
+			expIsUserRegistryConfirmedRepo: expectedAuthRepo{
+				Result: true,
+				Error:  nil,
+			},
+			expIsAuthSuccess: expectedAuthRepo{
+				Result: true,
+				Error:  nil,
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.description, func(t *testing.T) {
+			req, err := http.NewRequest(http.MethodPost, tt.route, strings.NewReader(tt.body))
+			assert.NoErrorf(t, err, tt.description)
+
+			cred := domain.AuthCredentials{}
+			err = json.Unmarshal([]byte(tt.body), &cred)
+			assert.NoErrorf(t, err, tt.description)
+
+			mockRepo := testMock.NewAuthRepositoryMock()
+			mockRepo.On("IsUserRegistered", mock.Anything, cred.Email).Return(tt.expIsUserRegisteredRepo.Result, tt.expIsUserRegisteredRepo.Error)
+			mockRepo.On("IsUserRegistryConfirmed", mock.Anything, cred.Email).Return(tt.expIsUserRegistryConfirmedRepo.Result, tt.expIsUserRegistryConfirmedRepo.Error)
+			mockRepo.On("IsAuthSuccess", mock.Anything, cred).Return(tt.expIsAuthSuccess.Result, tt.expIsAuthSuccess.Error)
 
 			app := server.NewServer().Server
 			NewAuthServer(app, mockRepo)

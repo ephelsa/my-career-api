@@ -30,6 +30,8 @@ type RegisterSuccess struct {
 	Email string `json:"email"`
 }
 
-type LoginSuccess struct {
-	Token string `json:"token"`
+type AuthCredentials struct {
+	Email    string `json:"email,omitempty"`
+	Password string `json:"password,omitempty"`
+	Token    string `json:"token,omitempty"`
 }

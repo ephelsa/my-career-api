@@ -5,16 +5,19 @@ import (
 )
 
 var (
-	InvalidAuth = func(email string) error {
-		return fmt.Errorf("%s invalid password or email", email)
+	InvalidAuthError = func(email string) error {
+		return fmt.Errorf("%s, email or password are invalid", email)
 	}
-	UserRegistered = func(email string) error {
+	UserRegisteredError = func(email string) error {
 		return fmt.Errorf("%s exists", email)
 	}
-	UserRegisteredWithoutConfirm = func(email string) error {
+	UserRegisteredWithoutConfirmError = func(email string) error {
 		return fmt.Errorf("%s must confirm the registry", email)
 	}
-	PasswordWithoutMinLen = func(minLen int) error {
+	UserNotRegisteredError = func(email string) error {
+		return fmt.Errorf("%s doesn't exist", email)
+	}
+	PasswordWithoutMinLenError = func(minLen int) error {
 		return fmt.Errorf("password must contain %d characters min", minLen)
 	}
 )

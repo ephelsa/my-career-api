@@ -24,7 +24,7 @@ func (h *handler) FetchAll(c *fiber.Ctx) error {
 	result, err := h.Repository.FetchAll(c.Context())
 	if err != nil {
 		return c.Status(http.StatusInternalServerError).JSON(sharedDomain.ErrorResponse(sharedDomain.Error{
-			Message: "An error occurs fetching all study levels",
+			Message: sharedDomain.UnExpectedError,
 			Details: err.Error(),
 		}))
 	}

@@ -27,7 +27,7 @@ func (h *handler) FetchAllCountries(c *fiber.Ctx) error {
 	result, err := h.Repository.FetchAllCountries(c.Context())
 	if err != nil {
 		return c.Status(http.StatusInternalServerError).JSON(sharedDomain.ErrorResponse(sharedDomain.Error{
-			Message: "An error occurs fetching countries",
+			Message: sharedDomain.UnExpectedError,
 			Details: err.Error(),
 		}))
 	}
@@ -41,7 +41,7 @@ func (h *handler) FetchAllDepartmentsByCountry(c *fiber.Ctx) error {
 	result, err := h.Repository.FetchDepartmentsByCountry(c.Context(), countryCode)
 	if err != nil {
 		return c.Status(http.StatusInternalServerError).JSON(sharedDomain.ErrorResponse(sharedDomain.Error{
-			Message: "An error occurs fetching departments",
+			Message: sharedDomain.UnExpectedError,
 			Details: err.Error(),
 		}))
 	}
@@ -57,7 +57,7 @@ func (h *handler) FetchAllMunicipalitiesByDepartmentAndCountry(c *fiber.Ctx) err
 	result, err := h.Repository.FetchMunicipalitiesByDepartmentAndCountry(c.Context(), countryCode, departmentCode)
 	if err != nil {
 		return c.Status(http.StatusInternalServerError).JSON(sharedDomain.ErrorResponse(sharedDomain.Error{
-			Message: "An error occurs fetching municipalities",
+			Message: sharedDomain.UnExpectedError,
 			Details: err.Error(),
 		}))
 	}

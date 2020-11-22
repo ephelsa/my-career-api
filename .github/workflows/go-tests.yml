@@ -12,3 +12,15 @@ jobs:
 
       - name: Golang tests
         run: make test
+
+      - name: Generate coverage report
+        run: |
+          go test `go list ./... | grep -v test` -coverprofile=coverage.txt -covermode=atomic
+
+      - name: Uplocad coverage report
+        uses: codecov/codecov-action@master
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          file: ./coverage.txt
+          flags: unittests
+          name: codecov-umbrella

@@ -6,7 +6,6 @@ import (
 	"ephelsa/my-career/pkg/auth/data"
 	"ephelsa/my-career/pkg/auth/domain"
 	"ephelsa/my-career/pkg/shared/infrastructure/database"
-	"github.com/dgrijalva/jwt-go"
 	"github.com/sirupsen/logrus"
 )
 
@@ -25,7 +24,30 @@ func (p *postgresAuthRepo) IsUserRegistered(c context.Context, email string) (re
 	rows, err := database.NewRowsByQueryContext(p.Connection, c, query, email)
 	if err != nil {
 		logrus.Error(err)
-		return false, err
+		return
+	}
+	defer func() {
+		err = rows.Close()
+		if err != nil {
+			logrus.Error(err)
+		}
+	}()
+
+	if rows.Next() {
+		if err = rows.Scan(&res); err != nil {
+			logrus.Error(err)
+		}
+	}
+
+	return
+}
+
+func (p *postgresAuthRepo) IsUserRegistryConfirmed(c context.Context, email string) (res bool, err error) {
+	query := `SELECT check_user_registry_confirmed($1)`
+	rows, err := database.NewRowsByQueryContext(p.Connection, c, query, email)
+	if err != nil {
+		logrus.Error(err)
+		return
 	}
 	defer func() {
 		err = rows.Close()
@@ -84,6 +106,7 @@ func (p *postgresAuthRepo) Register(c context.Context, r domain.Register) (res d
 	return
 }
 
+// TODO: Implement
 func (p *postgresAuthRepo) Login(c context.Context, email string, password string) (res domain.LoginSuccess, err error) {
 	query := `SELECT authenticate_user($1)`
 	row, err := database.NewRowsByQueryContext(p.Connection, c, query, email, password)
@@ -106,18 +129,15 @@ func (p *postgresAuthRepo) Login(c context.Context, email string, password strin
 	if isAuth {
 		res, err = p.storeToken(c, email)
 	} else {
-		err = domain.InvalidAuth(email)
+		err = data.InvalidAuth(email)
 	}
 
 	return
 }
 
+// TODO: JWT implementation. Probably this method will be erased
 func (p *postgresAuthRepo) storeToken(c context.Context, email string) (res domain.LoginSuccess, err error) {
-	loginSuccess, err := generateToken(email)
-	if err != nil {
-		return
-	}
-
+	loginSuccess := domain.LoginSuccess{Token: "something"} // This is hardcoded meanwhile fixe jwt generation and parsing
 	query := `INSERT INTO session (email, document_type, document, token)
 			SELECT email, document_type, document, $1
 			FROM "user"
@@ -141,19 +161,4 @@ func (p *postgresAuthRepo) storeToken(c context.Context, email string) (res doma
 	}
 
 	return loginSuccess, nil
-}
-
-func generateToken(email string) (res domain.LoginSuccess, err error) {
-	mySigningKey := []byte(email)
-
-	token := jwt.New(jwt.SigningMethodRS512)
-	ss, err := token.SignedString(mySigningKey)
-	if err != nil {
-		logrus.Error(err)
-		return res, err
-	}
-
-	return domain.LoginSuccess{
-		Token: ss,
-	}, nil
 }

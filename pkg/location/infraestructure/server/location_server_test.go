@@ -47,7 +47,7 @@ func TestHandler_FetchAllCountries(t *testing.T) {
 			route:        "/location/country",
 			expectedCode: http.StatusInternalServerError,
 			expectedBody: sharedDomain.ErrorResponse(sharedDomain.Error{
-				Message: "An error occurs fetching countries",
+				Message: sharedDomain.UnExpectedError,
 				Details: sharedDomain.ResourcesEmpty.Error(),
 			}),
 			expectedErrorType: sharedDomain.ResourcesEmpty,
@@ -120,7 +120,7 @@ func TestHandler_FetchAllDepartmentsByCountry(t *testing.T) {
 			countryArg:   "CO",
 			expectedCode: http.StatusInternalServerError,
 			expectedBody: sharedDomain.ErrorResponse(sharedDomain.Error{
-				Message: "An error occurs fetching departments",
+				Message: sharedDomain.UnExpectedError,
 				Details: sharedDomain.ResourcesEmpty.Error(),
 			}),
 			expectedErrorType: sharedDomain.ResourcesEmpty,
@@ -198,7 +198,7 @@ func TestHandler_FetchAllMunicipalitiesByDepartmentAndCountry(t *testing.T) {
 			departmentArg: "05",
 			expectedCode:  http.StatusInternalServerError,
 			expectedBody: sharedDomain.ErrorResponse(sharedDomain.Error{
-				Message: "An error occurs fetching municipalities",
+				Message: sharedDomain.UnExpectedError,
 				Details: sharedDomain.ResourcesEmpty.Error(),
 			}),
 			expectedErrorType: sharedDomain.ResourcesEmpty,

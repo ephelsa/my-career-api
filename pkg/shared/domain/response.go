@@ -3,12 +3,14 @@ package domain
 const (
 	successStatus = "success"
 	errorStatus   = "error"
+
+	UnExpectedError = "Unexpected error"
 )
 
 type Response struct {
 	Status string      `json:"status"`
-	Result interface{} `json:"result"`
-	Error  *Error      `json:"error"`
+	Result interface{} `json:"result,omitempty"`
+	Error  *Error      `json:"error,omitempty"`
 }
 
 type Error struct {

@@ -13,7 +13,7 @@ import (
 	"testing"
 )
 
-func TestHandler_FetchAll(t *testing.T) {
+func TestHandler_FetchAllHandler(t *testing.T) {
 	tests := []struct {
 		description string
 
@@ -51,8 +51,8 @@ func TestHandler_FetchAll(t *testing.T) {
 			route:        "/study-level/",
 			expectedCode: http.StatusInternalServerError,
 			expectedBody: sharedDomain.ErrorResponse(sharedDomain.Error{
-				Message: "An error occurs fetching all study levels",
-				Details: "resource is empty",
+				Message: sharedDomain.UnExpectedError,
+				Details: sharedDomain.ResourcesEmpty.Error(),
 			}),
 			expectedError: sharedDomain.ResourcesEmpty,
 		},

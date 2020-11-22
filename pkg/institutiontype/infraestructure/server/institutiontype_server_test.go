@@ -51,7 +51,7 @@ func TestHandler_FetchAll(t *testing.T) {
 			route:        "/institution-type/",
 			expectedCode: http.StatusInternalServerError,
 			expectedBody: sharedDomain.ErrorResponse(sharedDomain.Error{
-				Message: "An error occurs fetch all institution types",
+				Message: sharedDomain.UnExpectedError,
 				Details: sharedDomain.ResourcesEmpty.Error(),
 			}),
 			expectedError: sharedDomain.ResourcesEmpty,

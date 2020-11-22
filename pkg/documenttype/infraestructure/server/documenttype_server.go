@@ -3,8 +3,8 @@ package server
 import (
 	"ephelsa/my-career/pkg/documenttype/data"
 	sharedDomain "ephelsa/my-career/pkg/shared/domain"
+	sharedServer "ephelsa/my-career/pkg/shared/infrastructure/server"
 	"github.com/gofiber/fiber/v2"
-	"net/http"
 )
 
 type handler struct {
@@ -24,24 +24,24 @@ func NewDocumentTypeServer(remote *fiber.App, repo data.DocumentTypeRepository) 
 func (h *handler) FetchAll(c *fiber.Ctx) error {
 	result, err := h.Repository.FetchAll(c.Context())
 	if err != nil {
-		return c.Status(http.StatusInternalServerError).JSON(sharedDomain.ErrorResponse(sharedDomain.Error{
+		return sharedServer.InternalServerError(c, sharedDomain.Error{
 			Message: sharedDomain.UnExpectedError,
 			Details: err.Error(),
-		}))
+		})
 	}
 
-	return c.JSON(sharedDomain.SuccessResponse(result))
+	return sharedServer.OK(c, result)
 }
 
 func (h *handler) FetchByID(c *fiber.Ctx) error {
 	id := c.Params("id")
 	result, err := h.Repository.FetchByID(c.Context(), id)
 	if err != nil {
-		return c.Status(http.StatusInternalServerError).JSON(sharedDomain.ErrorResponse(sharedDomain.Error{
+		return sharedServer.InternalServerError(c, sharedDomain.Error{
 			Message: sharedDomain.UnExpectedError,
 			Details: err.Error(),
-		}))
+		})
 	}
 
-	return c.JSON(sharedDomain.SuccessResponse(result))
+	return sharedServer.OK(c, result)
 }

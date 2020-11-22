@@ -3,8 +3,8 @@ package server
 import (
 	"ephelsa/my-career/pkg/location/data"
 	sharedDomain "ephelsa/my-career/pkg/shared/domain"
+	sharedServer "ephelsa/my-career/pkg/shared/infrastructure/server"
 	"github.com/gofiber/fiber/v2"
-	"net/http"
 )
 
 type handler struct {
@@ -26,13 +26,13 @@ func NewLocationServer(remote *fiber.App, repo data.LocationRepository) {
 func (h *handler) FetchAllCountries(c *fiber.Ctx) error {
 	result, err := h.Repository.FetchAllCountries(c.Context())
 	if err != nil {
-		return c.Status(http.StatusInternalServerError).JSON(sharedDomain.ErrorResponse(sharedDomain.Error{
+		return sharedServer.InternalServerError(c, sharedDomain.Error{
 			Message: sharedDomain.UnExpectedError,
 			Details: err.Error(),
-		}))
+		})
 	}
 
-	return c.JSON(sharedDomain.SuccessResponse(result))
+	return sharedServer.OK(c, result)
 }
 
 // FetchAllDepartmentsByCountry provide all domain.Department by domain.Country
@@ -40,13 +40,13 @@ func (h *handler) FetchAllDepartmentsByCountry(c *fiber.Ctx) error {
 	countryCode := c.Params("countryCode")
 	result, err := h.Repository.FetchDepartmentsByCountry(c.Context(), countryCode)
 	if err != nil {
-		return c.Status(http.StatusInternalServerError).JSON(sharedDomain.ErrorResponse(sharedDomain.Error{
+		return sharedServer.InternalServerError(c, sharedDomain.Error{
 			Message: sharedDomain.UnExpectedError,
 			Details: err.Error(),
-		}))
+		})
 	}
 
-	return c.JSON(sharedDomain.SuccessResponse(result))
+	return sharedServer.OK(c, result)
 }
 
 // FetchAllMunicipalitiesByDepartmentAndCountry provide all domain.Municipality searching by domain.Country and
@@ -56,11 +56,11 @@ func (h *handler) FetchAllMunicipalitiesByDepartmentAndCountry(c *fiber.Ctx) err
 	departmentCode := c.Params("departmentCode")
 	result, err := h.Repository.FetchMunicipalitiesByDepartmentAndCountry(c.Context(), countryCode, departmentCode)
 	if err != nil {
-		return c.Status(http.StatusInternalServerError).JSON(sharedDomain.ErrorResponse(sharedDomain.Error{
+		return sharedServer.InternalServerError(c, sharedDomain.Error{
 			Message: sharedDomain.UnExpectedError,
 			Details: err.Error(),
-		}))
+		})
 	}
 
-	return c.JSON(sharedDomain.SuccessResponse(result))
+	return sharedServer.OK(c, result)
 }

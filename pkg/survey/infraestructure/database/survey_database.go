@@ -140,7 +140,7 @@ func groupAnswersByQuestions(surveys []surveyWithQuestions) (result domain.Surve
 		}
 
 		if i >= len(surveys)-1 || iSurvey.questionId != surveys[i+1].questionId {
-			result.Questions = append(result.Questions, domain.Question{
+			result.Questions = append(result.Questions, domain.QuestionWithAnswers{
 				Id:       iSurvey.questionId,
 				Question: iSurvey.question,
 				Type:     iSurvey.questionType,
@@ -151,4 +151,27 @@ func groupAnswersByQuestions(surveys []surveyWithQuestions) (result domain.Surve
 	}
 
 	return
+}
+
+func (p *postgresSurveyRepo) NewQuestionAnswer(c context.Context, ua domain.UserAnswer) error {
+	query := `INSERT INTO user_answer (email, document_type, document, question, answer, survey)
+			VALUES ($1, $2, $3, $4, $5, $6)
+			ON CONFLICT (email, document_type, document, question, survey)
+				DO UPDATE SET answer = EXCLUDED.answer;`
+	stmt, err := p.Connection.PrepareContext(c, query)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if err = stmt.Close(); err != nil {
+			logrus.Error(err)
+		}
+	}()
+
+	_, err = stmt.ExecContext(c, ua.Email, ua.DocumentType, ua.Document, ua.Question, ua.Answer, ua.Survey)
+	if err != nil {
+		logrus.Error(err)
+	}
+
+	return err
 }

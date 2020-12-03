@@ -51,7 +51,7 @@ func TestHandler_FetchAll(t *testing.T) {
 			httpMethod:   "GET",
 			expectedCode: http.StatusInternalServerError,
 			expectedBody: sharedDomain.ErrorResponse(sharedDomain.Error{
-				Message: sharedDomain.UnExpectedError,
+				Message: sharedDomain.UnexpectedError,
 				Details: sharedDomain.ResourcesEmpty.Error(),
 			}),
 			expectedError: sharedDomain.ResourcesEmpty,
@@ -115,7 +115,7 @@ func TestHandler_FetchByID(t *testing.T) {
 			idArg:        "something",
 			expectedCode: http.StatusInternalServerError,
 			expectedBody: sharedDomain.ErrorResponse(sharedDomain.Error{
-				Message: sharedDomain.UnExpectedError,
+				Message: sharedDomain.UnexpectedError,
 				Details: sharedDomain.ResourcesEmpty.Error(),
 			}),
 			expectedError: sharedDomain.ResourcesEmpty,

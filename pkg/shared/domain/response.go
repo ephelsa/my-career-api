@@ -4,7 +4,8 @@ const (
 	successStatus = "success"
 	errorStatus   = "error"
 
-	UnExpectedError = "Unexpected error"
+	UnexpectedError = "Unexpected error"
+	ResourceEmpty   = "Resource is empty"
 )
 
 type Response struct {

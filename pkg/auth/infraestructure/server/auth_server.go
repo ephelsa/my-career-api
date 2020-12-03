@@ -31,7 +31,7 @@ func (h *handler) Registry(c *fiber.Ctx) error {
 	if err != nil {
 		logrus.Error(err)
 		return sharedServer.InternalServerError(c, sharedDomain.Error{
-			Message: sharedDomain.UnExpectedError,
+			Message: sharedDomain.UnexpectedError,
 			Details: err.Error(),
 		})
 	}
@@ -39,7 +39,7 @@ func (h *handler) Registry(c *fiber.Ctx) error {
 	exists, err := h.isUserRegistered(c.Context(), reg.Email)
 	if err != nil {
 		return sharedServer.InternalServerError(c, sharedDomain.Error{
-			Message: sharedDomain.UnExpectedError,
+			Message: sharedDomain.UnexpectedError,
 			Details: err.Error(),
 		})
 	}
@@ -49,7 +49,7 @@ func (h *handler) Registry(c *fiber.Ctx) error {
 		confirmed, err := h.isUserRegistryConfirmed(c.Context(), reg.Email)
 		if err != nil {
 			return sharedServer.InternalServerError(c, sharedDomain.Error{
-				Message: sharedDomain.UnExpectedError,
+				Message: sharedDomain.UnexpectedError,
 				Details: err.Error(),
 			})
 		}
@@ -81,10 +81,11 @@ func (h *handler) Registry(c *fiber.Ctx) error {
 		})
 	}
 
+	// Register user
 	res, err := h.AuthRepository.Register(c.Context(), *reg)
 	if err != nil {
 		return sharedServer.InternalServerError(c, sharedDomain.Error{
-			Message: sharedDomain.UnExpectedError,
+			Message: sharedDomain.UnexpectedError,
 			Details: err.Error(),
 		})
 	}
@@ -98,7 +99,7 @@ func (h *handler) Login(c *fiber.Ctx) error {
 	if err != nil {
 		logrus.Error(err)
 		return sharedServer.InternalServerError(c, sharedDomain.Error{
-			Message: sharedDomain.UnExpectedError,
+			Message: sharedDomain.UnexpectedError,
 			Details: err.Error(),
 		})
 	}
@@ -107,7 +108,7 @@ func (h *handler) Login(c *fiber.Ctx) error {
 	exists, err := h.isUserRegistered(c.Context(), cred.Email)
 	if err != nil {
 		return sharedServer.InternalServerError(c, sharedDomain.Error{
-			Message: sharedDomain.UnExpectedError,
+			Message: sharedDomain.UnexpectedError,
 			Details: err.Error(),
 		})
 	}
@@ -117,7 +118,7 @@ func (h *handler) Login(c *fiber.Ctx) error {
 		confirmed, err = h.isUserRegistryConfirmed(c.Context(), cred.Email)
 		if err != nil {
 			return sharedServer.InternalServerError(c, sharedDomain.Error{
-				Message: sharedDomain.UnExpectedError,
+				Message: sharedDomain.UnexpectedError,
 				Details: err.Error(),
 			})
 		}
@@ -133,7 +134,7 @@ func (h *handler) Login(c *fiber.Ctx) error {
 		isIn, err := h.isAuthSuccess(c.Context(), cred)
 		if err != nil {
 			return sharedServer.InternalServerError(c, sharedDomain.Error{
-				Message: sharedDomain.UnExpectedError,
+				Message: sharedDomain.UnexpectedError,
 				Details: err.Error(),
 			})
 		}

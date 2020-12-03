@@ -4,6 +4,9 @@ import (
 	"database/sql"
 	sharedServer "ephelsa/my-career/pkg/shared/infrastructure/server"
 
+	surveyDatabase "ephelsa/my-career/pkg/survey/infraestructure/database"
+	surveyServer "ephelsa/my-career/pkg/survey/infraestructure/server"
+
 	documentTypeDatabase "ephelsa/my-career/pkg/documenttype/infraestructure/database"
 	documentTypeServer "ephelsa/my-career/pkg/documenttype/infraestructure/server"
 
@@ -26,4 +29,5 @@ func ServerRouter(s *sharedServer.Server, db *sql.DB) {
 	institutionTypeServer.NewInstitutionTypeServer(s.Server, institutionTypeDatabase.NewPostgresInstitutionTypeRepository(db))
 	locationServer.NewLocationServer(s.Server, locationDatabase.NewPostgresLocationRepository(db))
 	authServer.NewAuthServer(s.Server, authDatabase.NewPostgresAuthDatabase(db))
+	surveyServer.NewSurveyServer(s.Server, surveyDatabase.NewPostgresSurveyRepository(db))
 }

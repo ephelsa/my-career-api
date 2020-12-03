@@ -26,8 +26,13 @@ var (
 	LengthRequired = func(c *fiber.Ctx, err sharedDomain.Error) error {
 		return errorResponse(c, http.StatusLengthRequired, err)
 	}
+	// Unauthorized status code http.StatusUnauthorized
 	Unauthorized = func(c *fiber.Ctx, err sharedDomain.Error) error {
 		return errorResponse(c, http.StatusUnauthorized, err)
+	}
+	// NotFound status code http.StatusNotFound
+	NotFound = func(c *fiber.Ctx, err sharedDomain.Error) error {
+		return errorResponse(c, http.StatusNotFound, err)
 	}
 )
 

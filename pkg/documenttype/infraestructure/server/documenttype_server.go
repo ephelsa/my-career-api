@@ -25,7 +25,7 @@ func (h *handler) FetchAll(c *fiber.Ctx) error {
 	result, err := h.Repository.FetchAll(c.Context())
 	if err != nil {
 		return sharedServer.InternalServerError(c, sharedDomain.Error{
-			Message: sharedDomain.UnExpectedError,
+			Message: sharedDomain.UnexpectedError,
 			Details: err.Error(),
 		})
 	}
@@ -38,7 +38,7 @@ func (h *handler) FetchByID(c *fiber.Ctx) error {
 	result, err := h.Repository.FetchByID(c.Context(), id)
 	if err != nil {
 		return sharedServer.InternalServerError(c, sharedDomain.Error{
-			Message: sharedDomain.UnExpectedError,
+			Message: sharedDomain.UnexpectedError,
 			Details: err.Error(),
 		})
 	}

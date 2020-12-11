@@ -16,29 +16,6 @@ SET xmloption = content;
 SET client_min_messages = warning;
 SET row_security = off;
 
-DROP DATABASE IF EXISTS my_career_dev;
---
--- Name: my_career_dev; Type: DATABASE; Schema: -; Owner: developer
---
-
-CREATE DATABASE my_career_dev WITH TEMPLATE = template0 ENCODING = 'UTF8' LOCALE = 'en_US.utf8';
-
-
-ALTER DATABASE my_career_dev OWNER TO developer;
-
-\connect my_career_dev
-
-SET statement_timeout = 0;
-SET lock_timeout = 0;
-SET idle_in_transaction_session_timeout = 0;
-SET client_encoding = 'UTF8';
-SET standard_conforming_strings = on;
-SELECT pg_catalog.set_config('search_path', '', false);
-SET check_function_bodies = false;
-SET xmloption = content;
-SET client_min_messages = warning;
-SET row_security = off;
-
 --
 -- Name: pgcrypto; Type: EXTENSION; Schema: -; Owner: -
 --
@@ -285,7 +262,7 @@ FROM survey s
          INNER JOIN question_type qt ON q.question_type = qt.id
          LEFT JOIN answer_options ao ON q.answer_options = ao.code
          LEFT JOIN answer_option a ON ao.answer_option = a.id
-WHERE s.id = poll_id
+WHERE s.id = poll_id AND s.active = true
 ORDER BY q.id, a.option;
 $$;
 
@@ -299,7 +276,7 @@ ALTER FUNCTION public.retrieve_poll(poll_id integer) OWNER TO developer;
 CREATE FUNCTION public.retrieve_survey_answers_by_user_survey(u_email text, survey_id integer) RETURNS TABLE(email text, question text, answer text)
     LANGUAGE sql
     AS $$
-SELECT ua."user" AS email,
+SELECT ua.email AS email,
        q.question,
        CASE
            WHEN ao.option is null THEN ua.answer
@@ -308,7 +285,7 @@ SELECT ua."user" AS email,
 FROM user_answer ua
          INNER JOIN question q ON q.id = ua.question
          LEFT JOIN answer_option ao ON ua.answer = ao.id::text
-WHERE ua."user" = u_email AND ua.survey = survey_id;
+WHERE ua.email = u_email AND ua.survey = survey_id;
 $$;
 
 
@@ -754,7 +731,8 @@ ALTER SEQUENCE public.study_level_id_seq OWNED BY public.study_level.id;
 CREATE TABLE public.survey (
     id integer NOT NULL,
     name text NOT NULL,
-    description text
+    description text,
+    active boolean DEFAULT false NOT NULL
 );
 
 
@@ -813,13 +791,12 @@ COMMENT ON TABLE public.survey_question IS 'Intermediate table for survey and qu
 --
 
 CREATE TABLE public.user_answer (
-    id integer NOT NULL,
     email text NOT NULL,
     question integer NOT NULL,
     answer text,
     survey integer NOT NULL,
-    document_type character varying(5),
-    document text
+    document_type character varying(5) NOT NULL,
+    document text NOT NULL
 );
 
 
@@ -837,27 +814,6 @@ COMMENT ON TABLE public.user_answer IS 'Answers for the user';
 --
 
 COMMENT ON COLUMN public.user_answer.answer IS 'Can be an answer_option or something';
-
-
---
--- Name: user_answer_id_seq; Type: SEQUENCE; Schema: public; Owner: developer
---
-
-CREATE SEQUENCE public.user_answer_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
-ALTER TABLE public.user_answer_id_seq OWNER TO developer;
-
---
--- Name: user_answer_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: developer
---
-
-ALTER SEQUENCE public.user_answer_id_seq OWNED BY public.user_answer.id;
 
 
 --
@@ -910,13 +866,6 @@ ALTER TABLE ONLY public.survey ALTER COLUMN id SET DEFAULT nextval('public.surve
 
 
 --
--- Name: user_answer id; Type: DEFAULT; Schema: public; Owner: developer
---
-
-ALTER TABLE ONLY public.user_answer ALTER COLUMN id SET DEFAULT nextval('public.user_answer_id_seq'::regclass);
-
-
---
 -- Data for Name: answer_option; Type: TABLE DATA; Schema: public; Owner: developer
 --
 
@@ -934,6 +883,7 @@ COPY public.answer_option (id, option) FROM stdin;
 11	Bioingeniería
 12	Indufácil
 13	Ingeniería eléctrica
+14	Tal vez
 \.
 
 
@@ -955,6 +905,7 @@ COPY public.answer_options (id, code, answer_option) FROM stdin;
 11	3	11
 12	3	12
 13	3	13
+14	1	14
 \.
 
 
@@ -983,7 +934,7 @@ COPY public.department (code, name, country_code) FROM stdin;
 
 COPY public.document_type (id, value) FROM stdin;
 CC   	Cédula de Ciudadanía
-TI   	Tarjeta de Identidad
+TI   	Tarjeta de identidad
 CE   	Cédula de Extranjería
 \.
 
@@ -1004,14 +955,29 @@ COPY public.institution_type (id, value) FROM stdin;
 --
 
 COPY public.log_user (operation, time_stamp, email, document_type, document, first_name, second_name, first_surname, second_surname, password, institution_name, study_level, institution_type, registry_confirmed, department_code, municipality_code, country_code) FROM stdin;
-D	2020-11-19 06:39:33.103194	xephelsax@gmail.com	CC	1037656066	Leonardo	Andrés	Pérez	Castilla	$2a$06$4oXm91ib35u8gZupVGnB.OYIu5yhfdllOVL1ZoXH/jBinMHXXwHUe	Liceo Panamericano Campestre	4	2	f	70	001	CO
-I	2020-11-19 06:40:47.073915	xephelsax@gmail.com	CC	1037656066	Leonardo	Andrés	Pérez	Castill	$2a$06$q9kzAW1cng4Fl8ZpI/H3G.xNW/5uaV9KAg3exUkUkdBtIRbzuooWS	Liceo Panamericano Campestre	4	2	f	70	001	CO
-U	2020-11-19 06:41:12.615132	xephelsax@gmail.com	CC	1037656066	Leonardo		Pérez	Castill	$2a$06$t3GxPPktJgkrOP6IY3KgI.uPmRuxGrTxMG9mpo8kLFDHPKERtQCPa	Liceo Panamericano Campestre	4	2	f	70	001	CO
-U	2020-11-19 06:41:28.472277	xephelsax@gmail.com	CC	1037656066	Leonardo		Pérez	Castilla	$2a$06$PPV8j4vDVWZNZj1jBtAure5iQUftEHvhKF8MsBtfHx/U4u2VT2dmq	Liceo Panamericano Campestre	4	2	f	70	001	CO
-D	2020-11-19 06:42:46.412404	xephelsax@gmail.com	CC	1037656066	Leonardo		Pérez	Castilla	$2a$06$H5w/wYlgo5UHbB/7xak36eWI/3DE59kb0GAsP5NROVGYhx8tXnmOK	Liceo Panamericano Campestre	4	2	f	70	001	CO
-I	2020-11-19 06:56:50.385026	xephelsax@gmail.com	CC	1037656066	Leonardo		Pérez	Castilla	$2a$06$w2/JX8sDA6kH14tNVCUr7eKWMrFkNdCMDohlJixy.QxnAsFlH7Qgq	Liceo Panamericano Campestre	4	2	f	70	001	CO
-U	2020-11-19 06:56:50.385026	xephelsax@gmail.com	CC	1037656066	Leonardo		Pérez	Castilla	$2a$06$qa/K6SfjkS7fesNZPnMwGOa5kO7d0548lfa.a5eqCOcFjltPn88hW	Liceo Panamericano Campestre	4	2	f	70	001	CO
-U	2020-11-19 06:57:26.899852	xephelsax@gmail.com	CC	1037656066	Leonardo		Pérez	Castilla	$2a$06$B2u/HT8YItKD1Lz8l41w6Ov41xj8/eNsj6bOarckri/K4W16qkKDa	Liceo Panamericano Campestre	4	2	f	70	001	CO
+I	2020-11-21 06:59:04.228874	xephelsax@gmail.com	CC	1037656066	Leonardo	\N	Perez	Castilla	$2a$06$QKJMdh8TVNf89g4yCWK2Q.pdeuZlyIbhHSICkh.BOiEv4LCeMW4gu	Liceo Panamericano Campestre	4	2	f	70	001	CO
+U	2020-11-21 06:59:04.228874	xephelsax@gmail.com	CC	1037656066	Leonardo	\N	Perez	Castilla	$2a$06$hfFCyJADUolN/DJ/ZrTStOSd0fingiNVl3h8P8vMhX5wzwFfxrTi.	Liceo Panamericano Campestre	4	2	f	70	001	CO
+D	2020-11-21 07:03:50.21651	xephelsax@gmail.com	CC	1037656066	Leonardo	\N	Perez	Castilla	$2a$06$fQyf1ZOT2kcDKHlw/iJ6KeSAZG/IMmxmLQDd.NDo3Fy8Jffo09QVW	Liceo Panamericano Campestre	4	2	f	70	001	CO
+I	2020-11-21 07:04:20.245328	xephelsax@gmail.com	CC	1037656066	Leonardo	\N	Perez	Castilla	$2a$06$qvCYBatFBEFTD60QZJi0u.NPTLCtV2MaJyTxqx5os89PF2TS0ahEm	Liceo Panamericano Campestre	4	2	f	70	001	CO
+U	2020-11-21 07:04:20.245328	xephelsax@gmail.com	CC	1037656066	Leonardo	\N	Perez	Castilla	$2a$06$JkB68Ho1QOWcnG40aTlPRee0k4Bk72.Vq/IUMhj9ljxqexWkuq94u	Liceo Panamericano Campestre	4	2	f	70	001	CO
+D	2020-11-21 08:24:38.180446	xephelsax@gmail.com	CC	1037656066	Leonardo	\N	Perez	Castilla	$2a$06$NT7hn1.jtFcIipP3VDu/6.oVL1QWC0VoWqSJz0RxJYyePhbKUEFUO	Liceo Panamericano Campestre	4	2	f	70	001	CO
+I	2020-11-21 08:24:40.067754	xephelsax@gmail.com	CC	1037656066	Leonardo	Andres	Perez	Castilla	$2a$06$vPXxhY3o385XkBGUQC2Iv.iBdabS9VGCbSOnfliYgeEKNl0ygV9ge	Liceo Panamericano Campestre	4	2	f	70	001	CO
+U	2020-11-21 08:24:40.067754	xephelsax@gmail.com	CC	1037656066	Leonardo	Andres	Perez	Castilla	$2a$06$yqUQ0/3WtbM4Jbx4Y.OMYOmXqjJ01MSjmDj4H5sKVhXTCCg7p5dd.	Liceo Panamericano Campestre	4	2	f	70	001	CO
+D	2020-11-21 08:24:52.370495	xephelsax@gmail.com	CC	1037656066	Leonardo	Andres	Perez	Castilla	$2a$06$LrmKGiSX8doJs7ld20YCd.RipfkSs5dUc3QkrwPKi8VwjBA5v2SDW	Liceo Panamericano Campestre	4	2	f	70	001	CO
+I	2020-11-21 08:25:34.92914	xephelsax@gmail.com	CC	1037656066	Leonardo	Andres	Perez	Castilla	$2a$06$MY2Q6xhcMeX67D5ok5xs9uwSEs/vJQUJlaot39wguCd0BFw/auj0u	Liceo Panamericano Campestre	4	2	f	70	001	CO
+U	2020-11-21 08:25:34.92914	xephelsax@gmail.com	CC	1037656066	Leonardo	Andres	Perez	Castilla	$2a$06$3sJ9ZiwZu8z3iRsBIKcGJei20w0PAVRzq3mE7WLsx2OIsWabUmbyu	Liceo Panamericano Campestre	4	2	f	70	001	CO
+D	2020-11-21 08:26:01.781104	xephelsax@gmail.com	CC	1037656066	Leonardo	Andres	Perez	Castilla	$2a$06$.FsbuItieQkoJCKsabpnFupJaenLnDwgf4Q0cW7iqwH4kFgXyzSjG	Liceo Panamericano Campestre	4	2	f	70	001	CO
+I	2020-11-21 08:26:03.491667	xephelsax@gmail.com	CC	1037656066	Leonardo	Andres	Perez	Castilla	$2a$06$g7IVO0dBP/KPGAfoFHrQPOMSyXuqPW5mmtPNVNR6YB190CfQDrk.e	Liceo Panamericano Campestre	4	2	f	70	001	CO
+U	2020-11-21 08:26:03.491667	xephelsax@gmail.com	CC	1037656066	Leonardo	Andres	Perez	Castilla	$2a$06$xJDA5EWSixI1Cjrv4.sO4uwNJcBWMwQYSz1k6UArKh0KCBudPOEZq	Liceo Panamericano Campestre	4	2	f	70	001	CO
+D	2020-11-22 00:45:43.748477	xephelsax@gmail.com	CC	1037656066	Leonardo	Andres	Perez	Castilla	$2a$06$0yfn/okdVjwrQGEm013yKOmLOLgviXWQIB52gc.wk7OlNyd3br3iO	Liceo Panamericano Campestre	4	2	f	70	001	CO
+I	2020-11-22 00:45:45.338048	xephelsax@gmail.com	CC	1037656066	Leonardo	Andres	Perez	Castilla	$2a$06$vyjke/8rwpN0fl9Iwews1upTfHLaM4FAQeZaAau1Dw7lPSxyMgFES	Liceo Panamericano Campestre	4	2	f	70	001	CO
+U	2020-11-22 00:45:45.338048	xephelsax@gmail.com	CC	1037656066	Leonardo	Andres	Perez	Castilla	$2a$06$EAIjDQqQuhPW3EsIdF3ObOYJxwxTbHtizQtK5xLkG37hLipgR80pm	Liceo Panamericano Campestre	4	2	f	70	001	CO
+U	2020-11-22 05:20:22.266248	xephelsax@gmail.com	CC	1037656066	Leonardo	Andres	Perez	Castilla	$2a$06$L9P/gEOn7F1h26PHZslHme2w8wW93f/k253vToS8ucBSuLJsW9fPa	Liceo Panamericano Campestre	4	2	t	70	001	CO
+I	2020-11-23 05:39:52.919289	landres.perez@gmail.com	CC	23123	Leonardo	Andres	Perez	Castilla	$2a$06$HgZYoWqtbJhT52GYb3f4c.hVfbC0.RLJr.eNzT0WEQHyZ8q/iDFbe	Liceo Panamericano Campestre	4	2	f	70	001	CO
+U	2020-11-23 05:39:52.919289	landres.perez@gmail.com	CC	23123	Leonardo	Andres	Perez	Castilla	$2a$06$FOvLwASzgXdoYQ7/jODuMe54MIG0p8eaDi.MmVHZgtQbgRDumPKBK	Liceo Panamericano Campestre	4	2	f	70	001	CO
+I	2020-11-24 07:03:06.798534	ephelsa@hotmail.com	CC	1037656066	Leonardo		Pérez	Castilla	$2a$06$4CeSbR489tXye4D2.WKxWeeoAob8o4XYWxA1P7no7Ubo0VTUifFN2	Liceo Panamericano Campestre	4	2	f	70	001	CO
+U	2020-11-24 07:03:06.798534	ephelsa@hotmail.com	CC	1037656066	Leonardo		Pérez	Castilla	$2a$06$zlvbIsnyLmfLaVcGtbNMx.Gqqr2iKUy2Zin11ZyAHWOlo2cVOwYDe	Liceo Panamericano Campestre	4	2	f	70	001	CO
+U	2020-11-24 07:09:23.612914	ephelsa@hotmail.com	CC	1037656066	Leonardo		Pérez	Castilla	$2a$06$zkdlY7bPWoIJIxdQIVI.WuX4kW0P6utl9fKZa6OESPaIjvYig0fGG	Liceo Panamericano Campestre	4	2	t	70	001	CO
 \.
 
 
@@ -1020,6 +986,35 @@ U	2020-11-19 06:57:26.899852	xephelsax@gmail.com	CC	1037656066	Leonardo		Pérez	
 --
 
 COPY public.log_user_answer (email, survey, question, answer, time_stamp, operation, document_type, document) FROM stdin;
+xephelsax@gmail.com	1	1	8	2020-12-03 05:33:52.141387	I	CC	1037656066
+xephelsax@gmail.com	1	1	xephelsax@gmail.com	2020-12-03 05:56:09.201606	U	CC	1037656066
+xephelsax@gmail.com	1	1	8	2020-12-03 05:56:18.894657	U	CC	1037656066
+xephelsax@gmail.com	1	2	8	2020-12-03 05:57:26.075741	I	CC	1037656066
+xephelsax@gmail.com	1	2	9	2020-12-03 05:57:34.2466	U	CC	1037656066
+xephelsax@gmail.com	1	1	8	2020-12-03 06:08:31.499158	U	CC	1037656066
+xephelsax@gmail.com	1	1	8	2020-12-03 06:08:33.423087	U	CC	1037656066
+xephelsax@gmail.com	1	1	8	2020-12-03 06:08:33.924898	U	CC	1037656066
+xephelsax@gmail.com	1	1	8	2020-12-03 06:08:34.160088	U	CC	1037656066
+xephelsax@gmail.com	1	1	8	2020-12-03 06:17:06.432437	U	CC	1037656066
+xephelsax@gmail.com	1	1	8	2020-12-03 06:17:08.065597	U	CC	1037656066
+xephelsax@gmail.com	1	1	8	2020-12-03 06:17:08.747803	U	CC	1037656066
+xephelsax@gmail.com	1	1	8	2020-12-03 06:17:09.420431	U	CC	1037656066
+xephelsax@gmail.com	1	1	8	2020-12-03 06:17:10.095956	U	CC	1037656066
+xephelsax@gmail.com	1	2	1	2020-12-03 06:22:22.374415	U	CC	1037656066
+xephelsax@gmail.com	1	1	8	2020-12-03 06:22:52.670989	U	CC	1037656066
+xephelsax@gmail.com	1	1	Something	2020-12-03 06:23:03.239079	U	CC	1037656066
+xephelsax@gmail.com	1	1	9	2020-12-03 06:23:10.783856	U	CC	1037656066
+xephelsax@gmail.com	1	1	9	2020-12-03 06:23:46.354626	U	CC	1037656066
+xephelsax@gmail.com	1	1	9	2020-12-03 06:24:42.984976	U	CC	1037656066
+xephelsax@gmail.com	1	1	9	2020-12-03 06:28:15.981238	U	CC	1037656066
+xephelsax@gmail.com	1	1	9	2020-12-03 06:28:19.328196	U	CC	1037656066
+xephelsax@gmail.com	1	1	9	2020-12-03 14:19:23.143758	D	CC	1037656066
+xephelsax@gmail.com	1	2	1	2020-12-03 14:19:23.143758	D	CC	1037656066
+xephelsax@gmail.com	1	1	9	2020-12-03 14:19:26.556914	I	CC	1037656066
+xephelsax@gmail.com	1	5	Liceo Campestre	2020-12-03 14:19:55.874435	I	CC	1037656066
+xephelsax@gmail.com	1	5	Liceo Panamericano Campestre	2020-12-03 14:20:11.576963	U	CC	1037656066
+xephelsax@gmail.com	1	5	Liceo Campestre	2020-12-03 14:20:30.205594	U	CC	1037656066
+xephelsax@gmail.com	1	5	Liceo Panamericano Campestre	2020-12-03 14:20:41.858486	U	CC	1037656066
 \.
 
 
@@ -1223,9 +1218,9 @@ COPY public.study_level (id, value) FROM stdin;
 -- Data for Name: survey; Type: TABLE DATA; Schema: public; Owner: developer
 --
 
-COPY public.survey (id, name, description) FROM stdin;
-1	Perfilamiento de prueba	Esta es una simple pruebita
-2	Otro questionario	\N
+COPY public.survey (id, name, description, active) FROM stdin;
+1	Perfilamiento de prueba	Esta es una simple pruebita	t
+2	Otro questionario	\N	f
 \.
 
 
@@ -1248,7 +1243,9 @@ COPY public.survey_question (survey_id, question_id) FROM stdin;
 --
 
 COPY public."user" (first_name, second_name, first_surname, second_surname, email, password, document_type, institution_name, study_level, institution_type, registry_confirmed, department_code, municipality_code, country_code, document) FROM stdin;
-Leonardo		Pérez	Castilla	xephelsax@gmail.com	$2a$06$i8SN7PiprYns0RH4tgYR8e/0vi8XBKnYlyllyYpqyEf6vSAj8LD.u	CC   	Liceo Panamericano Campestre	4	2	f	70	001	CO	1037656066
+Leonardo	Andres	Perez	Castilla	xephelsax@gmail.com	$2a$06$Ya0biuVS63LTX4XQ0qABruXfLQ5NWo4ksOw6kD139b6rzcN5L9vYK	CC   	Liceo Panamericano Campestre	4	2	t	70	001	CO	1037656066
+Leonardo	Andres	Perez	Castilla	landres.perez@gmail.com	$2a$06$.shV05nG810Eqx2pv4fI1.7VBZEqBxQr59/b.0/xN/ECbfPzZ43By	CC   	Liceo Panamericano Campestre	4	2	f	70	001	CO	23123
+Leonardo		Pérez	Castilla	ephelsa@hotmail.com	$2a$06$Ng88bxzLnKixb8nxX7Gg4.QblbDw2H7UEF2I6kjAu3hd8KZjJ18US	CC   	Liceo Panamericano Campestre	4	2	t	70	001	CO	1037656066
 \.
 
 
@@ -1256,7 +1253,9 @@ Leonardo		Pérez	Castilla	xephelsax@gmail.com	$2a$06$i8SN7PiprYns0RH4tgYR8e/0vi8
 -- Data for Name: user_answer; Type: TABLE DATA; Schema: public; Owner: developer
 --
 
-COPY public.user_answer (id, email, question, answer, survey, document_type, document) FROM stdin;
+COPY public.user_answer (email, question, answer, survey, document_type, document) FROM stdin;
+xephelsax@gmail.com	1	9	1	CC	1037656066
+xephelsax@gmail.com	5	Liceo Panamericano Campestre	1	CC	1037656066
 \.
 
 
@@ -1264,14 +1263,14 @@ COPY public.user_answer (id, email, question, answer, survey, document_type, doc
 -- Name: answer_option_id_seq; Type: SEQUENCE SET; Schema: public; Owner: developer
 --
 
-SELECT pg_catalog.setval('public.answer_option_id_seq', 13, true);
+SELECT pg_catalog.setval('public.answer_option_id_seq', 14, true);
 
 
 --
 -- Name: answer_options_id_seq; Type: SEQUENCE SET; Schema: public; Owner: developer
 --
 
-SELECT pg_catalog.setval('public.answer_options_id_seq', 13, true);
+SELECT pg_catalog.setval('public.answer_options_id_seq', 14, true);
 
 
 --
@@ -1307,13 +1306,6 @@ SELECT pg_catalog.setval('public.study_level_id_seq', 6, true);
 --
 
 SELECT pg_catalog.setval('public.survey_info_code_seq', 2, true);
-
-
---
--- Name: user_answer_id_seq; Type: SEQUENCE SET; Schema: public; Owner: developer
---
-
-SELECT pg_catalog.setval('public.user_answer_id_seq', 2, true);
 
 
 --
@@ -1417,7 +1409,7 @@ ALTER TABLE ONLY public.survey_question
 --
 
 ALTER TABLE ONLY public.user_answer
-    ADD CONSTRAINT user_answer_pk PRIMARY KEY (id);
+    ADD CONSTRAINT user_answer_pk PRIMARY KEY (email, document_type, document, survey, question);
 
 
 --

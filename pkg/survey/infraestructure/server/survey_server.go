@@ -10,10 +10,10 @@ import (
 )
 
 type handler struct {
-	Repository data.SurveyRepository
+	Repository data.SurveyLocalRepository
 }
 
-func NewSurveyServer(remote *fiber.App, repo data.SurveyRepository) data.SurveyServerRepository {
+func NewSurveyServer(remote *fiber.App, repo data.SurveyLocalRepository) data.SurveyServerRepository {
 	handler := &handler{
 		Repository: repo,
 	}

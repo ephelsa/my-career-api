@@ -48,6 +48,8 @@ func TestHandler_Registry(t *testing.T) {
 		expUserRegisteredRepo        expectedAuthRepo
 		expUserRegistryConfirmedRepo expectedAuthRepo
 		expRegister                  expectedAuthRepo
+
+		expStoreUserInformationRepo expectedAuthRepo
 	}{
 		{
 			description:     "user exists without confirm",
@@ -107,6 +109,11 @@ func TestHandler_Registry(t *testing.T) {
 					Email: "xephelsax@gmail.com",
 				},
 			},
+			expStoreUserInformationRepo: expectedAuthRepo{
+				Result: domain.RegisterSuccess{
+					Email: "xephelsax@gmail.com",
+				},
+			},
 		},
 	}
 
@@ -126,13 +133,16 @@ func TestHandler_Registry(t *testing.T) {
 			err = json.Unmarshal(b, &reg)
 			assert.NoErrorf(t, err, tt.description)
 
-			mockRepo := testMock.NewAuthRepositoryMock()
-			mockRepo.On("IsUserRegistered", mock.Anything, tt.emailArg).Return(tt.expUserRegisteredRepo.Result, tt.expUserRegisteredRepo.Error)
-			mockRepo.On("IsUserRegistryConfirmed", mock.Anything, tt.emailArg).Return(tt.expUserRegistryConfirmedRepo.Result, tt.expUserRegistryConfirmedRepo.Error)
-			mockRepo.On("Register", mock.Anything, reg).Return(tt.expRegister.Result, tt.expRegister.Error)
+			authMockRepo := testMock.NewAuthRepositoryMock()
+			authMockRepo.On("IsUserRegistered", mock.Anything, tt.emailArg).Return(tt.expUserRegisteredRepo.Result, tt.expUserRegisteredRepo.Error)
+			authMockRepo.On("IsUserRegistryConfirmed", mock.Anything, tt.emailArg).Return(tt.expUserRegistryConfirmedRepo.Result, tt.expUserRegistryConfirmedRepo.Error)
+			authMockRepo.On("Register", mock.Anything, reg).Return(tt.expRegister.Result, tt.expRegister.Error)
+
+			userMockRepo := testMock.NewUserLocalRepositoryMock()
+			userMockRepo.On("StoreUserInformation", mock.Anything, tt.emailArg).Return(tt.expStoreUserInformationRepo.Result, tt.expStoreUserInformationRepo.Error)
 
 			app := server.NewServer().Server
-			NewAuthServer(app, mockRepo)
+			NewAuthServer(app, authMockRepo, userMockRepo)
 			res, err := app.Test(req, -1)
 			assert.NoErrorf(t, err, tt.description)
 			assert.Equalf(t, tt.expectedStatus, res.StatusCode, tt.description)
@@ -264,13 +274,15 @@ func TestHandler_IsAuthSuccess(t *testing.T) {
 			err = json.Unmarshal([]byte(tt.body), &cred)
 			assert.NoErrorf(t, err, tt.description)
 
-			mockRepo := testMock.NewAuthRepositoryMock()
-			mockRepo.On("IsUserRegistered", mock.Anything, cred.Email).Return(tt.expIsUserRegisteredRepo.Result, tt.expIsUserRegisteredRepo.Error)
-			mockRepo.On("IsUserRegistryConfirmed", mock.Anything, cred.Email).Return(tt.expIsUserRegistryConfirmedRepo.Result, tt.expIsUserRegistryConfirmedRepo.Error)
-			mockRepo.On("IsAuthSuccess", mock.Anything, cred).Return(tt.expIsAuthSuccess.Result, tt.expIsAuthSuccess.Error)
+			authMockRepo := testMock.NewAuthRepositoryMock()
+			authMockRepo.On("IsUserRegistered", mock.Anything, cred.Email).Return(tt.expIsUserRegisteredRepo.Result, tt.expIsUserRegisteredRepo.Error)
+			authMockRepo.On("IsUserRegistryConfirmed", mock.Anything, cred.Email).Return(tt.expIsUserRegistryConfirmedRepo.Result, tt.expIsUserRegistryConfirmedRepo.Error)
+			authMockRepo.On("IsAuthSuccess", mock.Anything, cred).Return(tt.expIsAuthSuccess.Result, tt.expIsAuthSuccess.Error)
+
+			userMockRepo := testMock.NewUserLocalRepositoryMock()
 
 			app := server.NewServer().Server
-			NewAuthServer(app, mockRepo)
+			NewAuthServer(app, authMockRepo, userMockRepo)
 			res, err := app.Test(req, -1)
 			assert.NoErrorf(t, err, tt.description)
 			assert.Equalf(t, tt.expectedStatus, res.StatusCode, tt.description)

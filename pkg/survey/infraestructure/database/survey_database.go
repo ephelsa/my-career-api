@@ -24,7 +24,7 @@ type surveyWithQuestions struct {
 	answer            interface{}
 }
 
-func NewPostgresSurveyRepository(db *sql.DB) data.SurveyRepository {
+func NewPostgresSurveyRepository(db *sql.DB) data.SurveyLocalRepository {
 	return &postgresSurveyRepo{
 		Connection: db,
 	}

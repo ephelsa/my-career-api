@@ -7,17 +7,20 @@ import (
 	"ephelsa/my-career/pkg/auth/domain"
 	sharedDomain "ephelsa/my-career/pkg/shared/domain"
 	sharedServer "ephelsa/my-career/pkg/shared/infrastructure/server"
+	userData "ephelsa/my-career/pkg/user/data"
 	"github.com/gofiber/fiber/v2"
 	"github.com/sirupsen/logrus"
 )
 
 type handler struct {
 	AuthRepository data.AuthRepository
+	UserRepository userData.UserLocalRepository
 }
 
-func NewAuthServer(remote *fiber.App, authRepo data.AuthRepository) {
+func NewAuthServer(remote *fiber.App, authRepo data.AuthRepository, userRepo userData.UserLocalRepository) {
 	handler := &handler{
 		AuthRepository: authRepo,
+		UserRepository: userRepo,
 	}
 
 	auth := remote.Group("/auth")
@@ -82,7 +85,16 @@ func (h *handler) Registry(c *fiber.Ctx) error {
 	}
 
 	// Register user
-	res, err := h.AuthRepository.Register(c.Context(), *reg)
+	_, err = h.AuthRepository.Register(c.Context(), *reg)
+	if err != nil {
+		return sharedServer.InternalServerError(c, sharedDomain.Error{
+			Message: sharedDomain.UnexpectedError,
+			Details: err.Error(),
+		})
+	}
+
+	// Store user information
+	res, err := h.UserRepository.StoreUserInformation(c.Context(), sharedDomain.AuthDomainRegisterToUserDomainUser(*reg))
 	if err != nil {
 		return sharedServer.InternalServerError(c, sharedDomain.Error{
 			Message: sharedDomain.UnexpectedError,

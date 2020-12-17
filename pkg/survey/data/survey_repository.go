@@ -6,7 +6,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-type SurveyRepository interface {
+type SurveyLocalRepository interface {
 	FetchAll(ctx context.Context) ([]domain.Survey, error)
 	FetchActiveSurveyById(ctx context.Context, surveyId string) (domain.SurveyWithQuestions, error)
 	NewQuestionAnswer(ctx context.Context, answer domain.UserAnswer) error

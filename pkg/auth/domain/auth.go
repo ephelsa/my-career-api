@@ -24,6 +24,8 @@ type Register struct {
 	CountryCode      string `json:"country_code"`
 	DepartmentCode   string `json:"department_code"`
 	MunicipalityCode string `json:"municipality_code"`
+
+	Birthdate string `json:"birthdate"`
 }
 
 type RegisterSuccess struct {

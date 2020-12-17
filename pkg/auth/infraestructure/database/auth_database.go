@@ -66,27 +66,10 @@ func (p *postgresAuthRepo) IsUserRegistryConfirmed(c context.Context, email stri
 }
 
 func (p *postgresAuthRepo) Register(c context.Context, r domain.Register) (res domain.RegisterSuccess, err error) {
-	query := `INSERT INTO "user" (first_name, second_name, first_surname, second_surname, email, password, document_type, 
-		institution_name, study_level, institution_type, registry_confirmed, department_code, municipality_code,
-		country_code, document) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15) 
-		RETURNING email`
-	row, err := database.NewRowsByQueryContext(p.Connection, c, query,
-		r.FirstName,
-		r.SecondName,
-		r.FirstSurname,
-		r.SecondSurname,
-		r.Email,
-		r.Password,
-		r.DocumentType,
-		r.InstitutionName,
-		r.StudyLevel,
-		r.InstitutionType,
-		r.RegistryConfirmed,
-		r.DepartmentCode,
-		r.MunicipalityCode,
-		r.CountryCode,
-		r.Document,
-	)
+	query := `INSERT INTO "user" (email, password, document_type, document)
+			VALUES ($1, $2, $3, $4)
+			RETURNING email`
+	row, err := database.NewRowsByQueryContext(p.Connection, c, query, r.Email, r.Password, r.DocumentType, r.Document)
 	if err != nil {
 		logrus.Error(err)
 		return domain.RegisterSuccess{}, err
@@ -106,7 +89,6 @@ func (p *postgresAuthRepo) Register(c context.Context, r domain.Register) (res d
 	return
 }
 
-// TODO: Implement
 func (p *postgresAuthRepo) IsAuthSuccess(c context.Context, auth domain.AuthCredentials) (res bool, err error) {
 	query := `SELECT authenticate_user($1, $2)`
 	row, err := database.NewRowsByQueryContext(p.Connection, c, query, auth.Email, auth.Password)

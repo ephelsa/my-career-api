@@ -104,9 +104,7 @@ func TestPostgresAuthRepo_Register(t *testing.T) {
 		_ = repo.Connection.Close()
 	}()
 
-	query := "INSERT INTO \"user\" \\(first_name, second_name, first_surname, second_surname, email, password, document_type, " +
-		"institution_name, study_level, institution_type, registry_confirmed, department_code, municipality_code, " +
-		"country_code, document\\) VALUES \\(\\$1, \\$2, \\$3, \\$4, \\$5, \\$6, \\$7, \\$8, \\$9, \\$10, \\$11, \\$12, \\$13, \\$14, \\$15\\) " +
+	query := "INSERT INTO \"user\" \\(email, password, document_type, document\\) VALUES \\(\\$1, \\$2, \\$3, \\$4\\) " +
 		"RETURNING email "
 	r := domain.Register{
 		Email:             "xephelsax@gmail.com",
@@ -130,23 +128,7 @@ func TestPostgresAuthRepo_Register(t *testing.T) {
 	}
 	mr := sqlmock.NewRows([]string{"email"}).AddRow(r.Email)
 
-	mock.ExpectQuery(query).WithArgs(
-		r.FirstName,
-		r.SecondName,
-		r.FirstSurname,
-		r.SecondSurname,
-		r.Email,
-		r.Password,
-		r.DocumentType,
-		r.InstitutionName,
-		r.StudyLevel,
-		r.InstitutionType,
-		r.RegistryConfirmed,
-		r.DepartmentCode,
-		r.MunicipalityCode,
-		r.CountryCode,
-		r.Document,
-	).WillReturnRows(mr)
+	mock.ExpectQuery(query).WithArgs(r.Email, r.Password, r.DocumentType, r.Document).WillReturnRows(mr)
 
 	result, err := repo.Register(context.Background(), r)
 	assert.NoError(t, err)

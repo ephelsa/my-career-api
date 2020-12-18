@@ -7,6 +7,7 @@ import (
 	"ephelsa/my-career/pkg/survey/data"
 	"ephelsa/my-career/pkg/survey/domain"
 	"github.com/gofiber/fiber/v2"
+	"strconv"
 )
 
 type handler struct {
@@ -21,7 +22,7 @@ func NewSurveyServer(remote *fiber.App, repo data.SurveyLocalRepository) data.Su
 	survey := remote.Group("/survey")
 	survey.Get("/", handler.FetchAll)
 	survey.Get("/:id/questions-with-answers", handler.FetchActiveSurveyById)
-	survey.Put("/new-answer", handler.NewQuestionAnswer)
+	survey.Put("/:id/answer", handler.NewQuestionAnswer)
 
 	return handler
 }
@@ -66,6 +67,13 @@ func (h *handler) FetchActiveSurveyById(c *fiber.Ctx) error {
 }
 
 func (h *handler) NewQuestionAnswer(c *fiber.Ctx) error {
+	surveyId, err := strconv.Atoi(c.Params("id"))
+	if err != nil {
+		return sharedServer.InternalServerError(c, sharedDomain.Error{
+			Message: sharedDomain.UnexpectedError,
+			Details: err.Error(),
+		})
+	}
 	body := c.Body()
 	userAnswer := domain.UserAnswer{}
 	if err := json.Unmarshal(body, &userAnswer); err != nil {
@@ -74,6 +82,7 @@ func (h *handler) NewQuestionAnswer(c *fiber.Ctx) error {
 			Details: err.Error(),
 		})
 	}
+	userAnswer.Survey = surveyId
 
 	if err := h.Repository.NewQuestionAnswer(c.Context(), userAnswer); err != nil {
 		return sharedServer.InternalServerError(c, sharedDomain.Error{

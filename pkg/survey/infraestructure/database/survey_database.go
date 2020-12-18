@@ -31,7 +31,7 @@ func NewPostgresSurveyRepository(db *sql.DB) data.SurveyLocalRepository {
 }
 
 func (p *postgresSurveyRepo) FetchAll(ctx context.Context) (result []domain.Survey, err error) {
-	query := "SELECT id, name, description, active FROM survey"
+	query := "SELECT id, name, description, active FROM survey WHERE active = true"
 	rows, err := database.NewRowsByQueryContext(p.Connection, ctx, query)
 	defer func() {
 		err = rows.Close()

@@ -22,7 +22,9 @@ func NewPostgresUserRepository(db *sql.DB) data.UserLocalRepository {
 }
 
 func (p *postgresUserRepo) InformationByEmail(ctx context.Context, email string) (domain.User, error) {
-	query := "SELECT first_name, second_name, first_surname, second_surname, email FROM user_information u WHERE email = $1"
+	query := `SELECT first_name, second_name, first_surname, second_surname, email, document_type, document 
+			FROM user_information u 
+			WHERE email = $1`
 	row, err := database.NewRowsByQueryContext(p.Connection, ctx, query, email)
 	result := domain.User{}
 	defer func() {
@@ -35,7 +37,15 @@ func (p *postgresUserRepo) InformationByEmail(ctx context.Context, email string)
 	}
 
 	if row.Next() {
-		if err = row.Scan(&result.FirstName, &result.SecondName, &result.FirstSurname, &result.SecondSurname, &result.Email); err != nil {
+		if err = row.Scan(
+			&result.FirstName,
+			&result.SecondName,
+			&result.FirstSurname,
+			&result.SecondSurname,
+			&result.Email,
+			&result.DocumentTypeCode,
+			&result.Document,
+		); err != nil {
 			logrus.Error(err)
 			return result, err
 		}

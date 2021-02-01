@@ -30,9 +30,20 @@ func NewPostgresSurveyRepository(db *sql.DB) data.SurveyLocalRepository {
 	}
 }
 
-func (p *postgresSurveyRepo) FetchAll(ctx context.Context) (result []domain.Survey, err error) {
-	query := "SELECT id, name, description, active FROM survey WHERE active = true"
-	rows, err := database.NewRowsByQueryContext(p.Connection, ctx, query)
+func (p *postgresSurveyRepo) FetchAll(ctx context.Context, user domain.UserAnswer) (result []domain.Survey, err error) {
+	query := `SELECT s.id, s.name, s.description, s.active, ljua.resolve_id, ljua.question_answered, count(sq.question_id) AS total_question
+			FROM survey s
+			LEFT JOIN (
+				SELECT ua.resolve_id, count(ua.question) AS question_answered, ua.survey, ua.email, ua.document, ua.document_type
+				FROM survey as s1
+				LEFT JOIN user_answer ua ON ua.survey = s1.id
+				WHERE ua.document_type = $1 AND ua.document = $2 AND ua.email = $3
+				GROUP BY ua.survey, ua.email, ua.survey, ua.resolve_id, ua.document, ua.document_type
+				) AS ljua ON ljua.survey = s.id
+			INNER JOIN survey_question sq on s.id = sq.survey_id
+			WHERE s.active = true
+			GROUP BY s.id, s.name, s.description, s.active, ljua.resolve_id, ljua.question_answered`
+	rows, err := database.NewRowsByQueryContext(p.Connection, ctx, query, user.DocumentTypeCode, user.Document, user.Email)
 	defer func() {
 		err = rows.Close()
 		if err != nil {
@@ -47,7 +58,7 @@ func (p *postgresSurveyRepo) FetchAll(ctx context.Context) (result []domain.Surv
 	result = make([]domain.Survey, 0)
 	for rows.Next() {
 		r := domain.Survey{}
-		if err := rows.Scan(&r.Id, &r.Name, &r.Description, &r.IsActive); err != nil {
+		if err := rows.Scan(&r.Id, &r.Name, &r.Description, &r.IsActive, &r.ResolveAttempt, &r.QuestionsAnswered, &r.TotalQuestions); err != nil {
 			logrus.Error(err)
 			return nil, err
 		}
@@ -154,9 +165,9 @@ func groupAnswersByQuestions(surveys []surveyWithQuestions) (result domain.Surve
 }
 
 func (p *postgresSurveyRepo) NewQuestionAnswer(c context.Context, ua domain.UserAnswer) error {
-	query := `INSERT INTO user_answer (email, document_type, document, question, answer, survey)
-			VALUES ($1, $2, $3, $4, $5, $6)
-			ON CONFLICT (email, document_type, document, question, survey)
+	query := `INSERT INTO user_answer (email, document_type, document, question, answer, survey, resolve_id)
+			VALUES ($1, $2, $3, $4, $5, $6, $7)
+			ON CONFLICT (email, document_type, document, question, survey, resolve_id)
 				DO UPDATE SET answer = EXCLUDED.answer;`
 	stmt, err := p.Connection.PrepareContext(c, query)
 	if err != nil {
@@ -168,7 +179,7 @@ func (p *postgresSurveyRepo) NewQuestionAnswer(c context.Context, ua domain.User
 		}
 	}()
 
-	_, err = stmt.ExecContext(c, ua.Email, ua.DocumentType, ua.Document, ua.Question, ua.Answer, ua.Survey)
+	_, err = stmt.ExecContext(c, ua.Email, ua.DocumentTypeCode, ua.Document, ua.Question, ua.Answer, ua.Survey, ua.ResolveAttempt)
 	if err != nil {
 		logrus.Error(err)
 	}

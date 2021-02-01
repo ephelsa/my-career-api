@@ -20,7 +20,7 @@ func NewSurveyServer(remote *fiber.App, repo data.SurveyLocalRepository) data.Su
 	}
 
 	survey := remote.Group("/survey")
-	survey.Get("/", handler.FetchAll)
+	survey.Post("/by-user", handler.FetchAll)
 	survey.Get("/:id/questions-with-answers", handler.FetchActiveSurveyById)
 	survey.Put("/:id/answer", handler.NewQuestionAnswer)
 
@@ -28,7 +28,16 @@ func NewSurveyServer(remote *fiber.App, repo data.SurveyLocalRepository) data.Su
 }
 
 func (h *handler) FetchAll(c *fiber.Ctx) error {
-	result, err := h.Repository.FetchAll(c.Context())
+	body := c.Body()
+	userInfo := domain.UserAnswer{}
+	if err := json.Unmarshal(body, &userInfo); err != nil {
+		return sharedServer.InternalServerError(c, sharedDomain.Error{
+			Message: sharedDomain.UnexpectedError,
+			Details: err.Error(),
+		})
+	}
+
+	result, err := h.Repository.FetchAll(c.Context(), userInfo)
 	if err != nil {
 		return sharedServer.InternalServerError(c, sharedDomain.Error{
 			Message: sharedDomain.UnexpectedError,

@@ -20,9 +20,15 @@ type Server struct {
 	Port string `json:"port"`
 }
 
+type ClassifierModel struct {
+	URL  string `json:"url"`
+	Port string `json:"port"`
+}
+
 type Config struct {
-	Database Database `json:"database"`
-	Server   Server   `json:"server"`
+	Database        Database        `json:"database"`
+	Server          Server          `json:"server"`
+	ClassifierModel ClassifierModel `json:"classifier_model"`
 }
 
 func Envs() Environments {
@@ -72,8 +78,12 @@ func Setup() *Config {
 	server := map[string]interface{}{
 		"port": viper.Get("SERVER_PORT"),
 	}
+	model := map[string]interface{}{
+		"url":  viper.Get("MODEL_URL"),
+		"port": viper.Get("MODEL_PORT"),
+	}
 
-	conf, err := newConfig(db, server)
+	conf, err := newConfig(db, server, model)
 	if err != nil {
 		panic(fmt.Errorf("Error retrieving Config: %s \n", err))
 	}
@@ -95,10 +105,11 @@ func viperReadConfigFile(file EnvironmentFile) error {
 	}
 }
 
-func newConfig(database map[string]interface{}, server map[string]interface{}) (*Config, error) {
+func newConfig(database map[string]interface{}, server map[string]interface{}, model map[string]interface{}) (*Config, error) {
 	unparsed := map[string]interface{}{
-		"database": database,
-		"server":   server,
+		"database":         database,
+		"server":           server,
+		"classifier_model": model,
 	}
 	config := Config{}
 	bytes, err := json.Marshal(unparsed)

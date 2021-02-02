@@ -9,13 +9,15 @@ import (
 	"github.com/magiconair/properties/assert"
 )
 
-func (conf Config) helperAssertConfig(t *testing.T, database map[string]interface{}, server map[string]interface{}) {
+func (conf Config) helperAssertConfig(t *testing.T, database map[string]interface{}, server map[string]interface{}, model map[string]interface{}) {
 	assert.Equal(t, conf.Database.Username, database["user"])
 	assert.Equal(t, conf.Database.Password, database["pass"])
 	assert.Equal(t, conf.Database.Name, database["name"])
 	assert.Equal(t, conf.Database.Host, database["host"])
 	assert.Equal(t, conf.Database.Port, database["port"])
 	assert.Equal(t, conf.Server.Port, server["port"])
+	assert.Equal(t, conf.ClassifierModel.URL, model["url"])
+	assert.Equal(t, conf.ClassifierModel.Port, model["port"])
 }
 
 func Test_newConfig(t *testing.T) {
@@ -29,12 +31,16 @@ func Test_newConfig(t *testing.T) {
 	server := map[string]interface{}{
 		"port": "6969",
 	}
-	conf, err := newConfig(db, server)
+	model := map[string]interface{}{
+		"url":  "far-far-away.com",
+		"port": "6970",
+	}
+	conf, err := newConfig(db, server, model)
 	if err != nil {
 		t.Errorf("An error has been occur %s", err)
 	}
 
-	conf.helperAssertConfig(t, db, server)
+	conf.helperAssertConfig(t, db, server, model)
 }
 
 func openConfigFile(fileName string) (*Config, error) {
@@ -53,6 +59,10 @@ func openConfigFile(fileName string) (*Config, error) {
 		},
 		Server: Server{
 			Port: env["SERVER_PORT"],
+		},
+		ClassifierModel: ClassifierModel{
+			URL:  env["MODEL_URL"],
+			Port: env["MODEL_PORT"],
 		},
 	}
 
@@ -75,7 +85,11 @@ func Test_Setup_Development(t *testing.T) {
 	server := map[string]interface{}{
 		"port": configuration.Server.Port,
 	}
-	Setup().helperAssertConfig(t, db, server)
+	model := map[string]interface{}{
+		"url":  configuration.ClassifierModel.URL,
+		"port": configuration.ClassifierModel.Port,
+	}
+	Setup().helperAssertConfig(t, db, server, model)
 }
 
 func Test_Setup_Production(t *testing.T) {
@@ -93,6 +107,8 @@ func Test_Setup_Production(t *testing.T) {
 	_ = os.Setenv("DB_NAME", "SOME-NAME")
 	_ = os.Setenv("DB_HOST", "far-far-away.com")
 	_ = os.Setenv("DB_PORT", ":80280")
+	_ = os.Setenv("MODEL_URL", "far-far-away.com")
+	_ = os.Setenv("MODEL_PORT", "6948")
 
 	db := map[string]interface{}{
 		"user": os.Getenv("DB_USER"),
@@ -104,6 +120,10 @@ func Test_Setup_Production(t *testing.T) {
 	server := map[string]interface{}{
 		"port": configuration.Server.Port,
 	}
+	model := map[string]interface{}{
+		"url":  os.Getenv("MODEL_URL"),
+		"port": os.Getenv("MODEL_PORT"),
+	}
 
-	Setup().helperAssertConfig(t, db, server)
+	Setup().helperAssertConfig(t, db, server, model)
 }

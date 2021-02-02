@@ -20,8 +20,10 @@ func NewSurveyServer(remote *fiber.App, repo data.SurveyLocalRepository) data.Su
 	}
 
 	survey := remote.Group("/survey")
-	survey.Post("/by-user", handler.FetchAll)
+
 	survey.Get("/:id/questions-with-answers", handler.FetchActiveSurveyById)
+	survey.Post("/by-user", handler.FetchAll)
+	survey.Post("/bulk-answers", handler.BulkQuestionAnswer)
 	survey.Put("/:id/answer", handler.NewQuestionAnswer)
 
 	return handler
@@ -94,6 +96,26 @@ func (h *handler) NewQuestionAnswer(c *fiber.Ctx) error {
 	userAnswer.Survey = surveyId
 
 	if err := h.Repository.NewQuestionAnswer(c.Context(), userAnswer); err != nil {
+		return sharedServer.InternalServerError(c, sharedDomain.Error{
+			Message: sharedDomain.UnexpectedError,
+			Details: err.Error(),
+		})
+	}
+
+	return sharedServer.OK(c, nil)
+}
+
+func (h *handler) BulkQuestionAnswer(c *fiber.Ctx) error {
+	body := c.Body()
+	var bulkUserAnswer []*domain.UserAnswer
+	if err := json.Unmarshal(body, &bulkUserAnswer); err != nil {
+		return sharedServer.InternalServerError(c, sharedDomain.Error{
+			Message: sharedDomain.UnexpectedError,
+			Details: err.Error(),
+		})
+	}
+
+	if err := h.Repository.BulkQuestionAnswer(c.Context(), bulkUserAnswer); err != nil {
 		return sharedServer.InternalServerError(c, sharedDomain.Error{
 			Message: sharedDomain.UnexpectedError,
 			Details: err.Error(),

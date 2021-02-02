@@ -6,7 +6,9 @@ import (
 	"ephelsa/my-career/pkg/shared/infrastructure/database"
 	"ephelsa/my-career/pkg/survey/data"
 	"ephelsa/my-career/pkg/survey/domain"
+	"fmt"
 	"github.com/sirupsen/logrus"
+	"strings"
 )
 
 type postgresSurveyRepo struct {
@@ -180,6 +182,46 @@ func (p *postgresSurveyRepo) NewQuestionAnswer(c context.Context, ua domain.User
 	}()
 
 	_, err = stmt.ExecContext(c, ua.Email, ua.DocumentTypeCode, ua.Document, ua.Question, ua.Answer, ua.Survey, ua.ResolveAttempt)
+	if err != nil {
+		logrus.Error(err)
+	}
+
+	return err
+}
+
+func (p *postgresSurveyRepo) BulkQuestionAnswer(ctx context.Context, answers []*domain.UserAnswer) error {
+	valueStrings := make([]string, 0, len(answers))
+	valueArgs := make([]interface{}, 0, len(answers)*7)
+	i := 0
+	for _, post := range answers {
+		valueStrings = append(valueStrings, fmt.Sprintf("($%d, $%d, $%d, $%d, $%d, $%d, $%d)", i*7+1, i*7+2, i*7+3, i*7+4, i*7+5, i*7+6, i*7+7))
+		valueArgs = append(valueArgs, post.Email)
+		valueArgs = append(valueArgs, post.DocumentTypeCode)
+		valueArgs = append(valueArgs, post.Document)
+		valueArgs = append(valueArgs, post.Question)
+		valueArgs = append(valueArgs, post.Answer)
+		valueArgs = append(valueArgs, post.Survey)
+		valueArgs = append(valueArgs, post.ResolveAttempt)
+		i++
+	}
+
+	query := `INSERT INTO user_answer (email, document_type, document, question, answer, survey, resolve_id)
+			VALUES %s
+			ON CONFLICT (email, document_type, document, question, survey, resolve_id)
+				DO UPDATE SET answer = EXCLUDED.answer;`
+	query = fmt.Sprintf(query, strings.Join(valueStrings, ","))
+	stmt, err := p.Connection.PrepareContext(ctx, query)
+	if err != nil {
+		logrus.Error(err)
+		return err
+	}
+	defer func() {
+		if err = stmt.Close(); err != nil {
+			logrus.Error(err)
+		}
+	}()
+
+	_, err = stmt.ExecContext(ctx, valueArgs...)
 	if err != nil {
 		logrus.Error(err)
 	}

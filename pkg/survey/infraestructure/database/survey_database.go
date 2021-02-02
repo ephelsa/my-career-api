@@ -228,3 +228,34 @@ func (p *postgresSurveyRepo) BulkQuestionAnswer(ctx context.Context, answers []*
 
 	return err
 }
+
+func (p *postgresSurveyRepo) FetchUserAnswers(ctx context.Context, a domain.UserAnswer) (result []domain.UserAnswer, err error) {
+	query := `SELECT ua.question, ao.classifier_value
+			FROM user_answer ua
+			INNER JOIN answer_option ao ON cast(ao.id AS text) = ua.answer
+			WHERE ua.survey = 1 AND ua.document_type = $1 AND ua.document = $2 AND ua.email = $3 AND ua.survey = $4 AND ua.resolve_id = $5
+			ORDER BY ua.question ASC;`
+	rows, err := database.NewRowsByQueryContext(p.Connection, ctx, query, a.DocumentTypeCode, a.Document, a.Email, a.Survey, a.ResolveAttempt)
+	defer func() {
+		err = rows.Close()
+		if err != nil {
+			logrus.Error(err)
+		}
+	}()
+	if err != nil {
+		logrus.Error(err)
+		return
+	}
+
+	for rows.Next() {
+		r := domain.UserAnswer{}
+		if err = rows.Scan(&r.Question, &r.ClassifierValue); err != nil {
+			logrus.Error(err)
+			return
+		}
+
+		result = append(result, r)
+	}
+
+	return
+}

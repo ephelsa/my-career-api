@@ -2,6 +2,7 @@ package data
 
 import (
 	"database/sql"
+	"ephelsa/my-career/internal/env"
 	sharedServer "ephelsa/my-career/pkg/shared/infrastructure/server"
 
 	surveyDatabase "ephelsa/my-career/pkg/survey/infraestructure/database"
@@ -26,7 +27,7 @@ import (
 	userServer "ephelsa/my-career/pkg/user/infraestructure/server"
 )
 
-func ServerRouter(s *sharedServer.Server, db *sql.DB) {
+func ServerRouter(s *sharedServer.Server, db *sql.DB, model env.ClassifierModel) {
 	userPostgresRepo := userDatabase.NewPostgresUserRepository(db)
 
 	documentTypeServer.NewDocumentTypeServer(s.Server, documentTypeDatabase.NewPostgresDocumentTypeRepository(db))
@@ -34,6 +35,6 @@ func ServerRouter(s *sharedServer.Server, db *sql.DB) {
 	institutionTypeServer.NewInstitutionTypeServer(s.Server, institutionTypeDatabase.NewPostgresInstitutionTypeRepository(db))
 	locationServer.NewLocationServer(s.Server, locationDatabase.NewPostgresLocationRepository(db))
 	authServer.NewAuthServer(s.Server, authDatabase.NewPostgresAuthDatabase(db), userPostgresRepo)
-	surveyServer.NewSurveyServer(s.Server, surveyDatabase.NewPostgresSurveyRepository(db))
+	surveyServer.NewSurveyServer(s.Server, surveyDatabase.NewPostgresSurveyRepository(db), model)
 	userServer.NewUserServer(s.Server, userPostgresRepo)
 }

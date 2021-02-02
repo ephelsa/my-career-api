@@ -19,7 +19,7 @@ func Test_SuccessResponse(t *testing.T) {
 	}
 
 	want := Response{
-		Status: successStatus,
+		Status: SuccessStatus,
 		Result: r,
 		Error:  nil,
 	}
@@ -35,7 +35,7 @@ func Test_ErrorResponse(t *testing.T) {
 		Details: "An error occurs",
 	}
 	want := Response{
-		Status: errorStatus,
+		Status: ErrorStatus,
 		Result: nil,
 		Error:  &e,
 	}

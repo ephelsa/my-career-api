@@ -1,8 +1,8 @@
 package domain
 
 const (
-	successStatus = "success"
-	errorStatus   = "error"
+	SuccessStatus = "success"
+	ErrorStatus   = "error"
 
 	UnexpectedError = "Unexpected error"
 	ResourceEmpty   = "Resource is empty"
@@ -22,7 +22,7 @@ type Error struct {
 // SuccessResponse simplify send a successfully response
 func SuccessResponse(result interface{}) Response {
 	return Response{
-		Status: successStatus,
+		Status: SuccessStatus,
 		Result: result,
 		Error:  nil,
 	}
@@ -31,7 +31,7 @@ func SuccessResponse(result interface{}) Response {
 // ErrorResponse simplify send an error response
 func ErrorResponse(error Error) Response {
 	return Response{
-		Status: errorStatus,
+		Status: ErrorStatus,
 		Result: nil,
 		Error:  &error,
 	}

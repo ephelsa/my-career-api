@@ -11,6 +11,8 @@ type SurveyLocalRepository interface {
 	FetchActiveSurveyById(ctx context.Context, surveyId string) (domain.SurveyWithQuestions, error)
 	NewQuestionAnswer(ctx context.Context, answer domain.UserAnswer) error
 	BulkQuestionAnswer(ctx context.Context, answers []*domain.UserAnswer) error
+	// FetchUserAnswers this search by domain.Answer Document, DocumentTypeCode, Email, Survey and Attempt
+	FetchUserAnswers(ctx context.Context, a domain.UserAnswer) (result []domain.UserAnswer, err error)
 }
 
 type SurveyServerRepository interface {
@@ -22,4 +24,6 @@ type SurveyServerRepository interface {
 	NewQuestionAnswer(c *fiber.Ctx) error
 	// BulkQuestionAnswer is http.MethodPost
 	BulkQuestionAnswer(c *fiber.Ctx) error
+	// ClassifySurveyAnswersByAttempt is http.MethodPost
+	ClassifySurveyAnswersByAttempt(c *fiber.Ctx) error
 }
